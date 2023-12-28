@@ -64,7 +64,7 @@ function read_memory_usage(){
     Low:            11Gi        10Gi       606Mi
     High:             0B          0B          0B
     Swap:          4.0Gi       2.7Gi       1.3Gi'
-    
+
     #MEMORY
     #total  11Gi  
     total_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }')
@@ -162,19 +162,45 @@ function read_process_information(){
     TIME: Total accumulated CPU time.
     COMMAND: The command that started the process.'
 
-    #USER      root       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1\n"; }'
-    #PID      1       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2\n"; }'
-    #CPU      0.0       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3\n"; }'
-    #MEM      0.1       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$4\n"; }'
-    #VSZ      172488       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$5\n"; }'
-    #RSS      16280       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$6\n"; }'
-    #TTY      ?       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$7\n"; }'
-    #STAT      Ss       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$8\n"; }'
-    #START      17:15       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$9\n"; }'
-    #TIME      0:09       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$10\n"; }'
-    #COMMAND      /sbin/init splash       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-
+    IFS=$'\n'  # Set Internal Field Separator to newline
+    total_process_array=()
+    process_count=0
+    for line in $(ps aux); do
+        # Process each line as needed
+        #PID      1
+        if [[ $process_count -eq 0 ]]; then
+            process_count=$(echo "$process_count + 1" | bc)
+            continue
+        else
+        pid=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #CPU      0.0       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3\n"; }'
+        #MEM      0.1       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$4\n"; }'
+        #VSZ      172488       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$5\n"; }'
+        #RSS      16280       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$6\n"; }'
+        #TTY      ?       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$7\n"; }'
+        #STAT      Ss       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$8\n"; }'
+        #START      17:15       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$9\n"; }'
+        #TIME      0:09       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$10\n"; }'
+        #COMMAND      /sbin/init splash       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
+        fi
+        unit_process_object='{
+            "id":'
+        unit_process_object+="$process_count"
+        unit_process_object+=',
+            "meta":{
+                "pid":'
+        unit_process_object+="$pid"
+                
+        unit_process_object+='}
+        }'
+        total_process_array+=("$unit_process_object")
+        total_process_array+=(,)
+        process_count=$(echo "$process_count + 1" | bc)
+        echo "${total_process_array[@]}"
+    done
+        total_process_array=$(echo "${total_process_array[@]}" | sed -E 's/.*[,]$//')
 }
+read_process_information
 
 function logging(){
     /var/log/symo/H:M:S::D:M:Y.smlog
@@ -234,4 +260,3 @@ function main(){
         init_config
     fi
 }
-read_memory_usage
