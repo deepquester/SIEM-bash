@@ -1,39 +1,46 @@
 #!/bin/bash
 
-fucntion read_os(){
-    cat /etc/os-release | grep -w "NAME=" | cut -c 7- | sed 's/.$//'
+# Define ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'  # No Color
+
+function read_os(){
     #example Ubuntu
+    cat /etc/os-release | grep -w "NAME=" | cut -c 7- | sed 's/.$//'
 } 
 
 function read_os_version(){
-    cat /etc/os-release | grep "VERSION=" | cut -c 10- | sed 's/.$//'
     #example 23.10 (Mantic Minotaur)
+    cat /etc/os-release | grep "VERSION=" | cut -c 10- | sed 's/.$//'
 }
 
 function read_kernel_version(){
-    uname -r
     #example 6.6.8
+    uname -r
 }
 
 function read_system_architecture(){
-    uname -p
     #example x86_64
+    uname -p
 }
 
 function read_system_uptime(){
-    uptime -s
     #example 2023-12-28 17:15:35
+    uptime -s
 }
 function read_system_timestamp(){
-    date +'%d-%m-%Y'
+    $date=$(date +'%d-%m-%Y')
     #example 28-12-2023
-    date +'%H:%M:%S'
+    $time=$(date +'%H:%M:%S')
     #example 18:04:42
-    date +'%A'
+    $day=$(date +'%A')
     #example Thursday
 }
 function read_cpu_usage(){
-    mpstat -o JSON | jq '.sysstat.hosts[0].statistics[0]."cpu-load"[0]'
     : '#example
     {
         "cpu": "all",
@@ -48,47 +55,64 @@ function read_cpu_usage(){
         "gnice": 0,
         "idle": 90.21
     } '
+    mpstat -o JSON | jq '.sysstat.hosts[0].statistics[0]."cpu-load"[0]'
 
 }
 function read_memory_usage(){
-                    total        used        free      shared  buff/cache   available
-        Mem:            11Gi       9.7Gi       545Mi       838Mi       2.4Gi       1.8Gi
-        Swap:          4.0Gi       768Ki       4.0Gi               d
-        Ada
+    : 'total        used        free      shared  buff/cache   available
+    Mem:            11Gi       8.9Gi       606Mi       1.0Gi       3.3Gi       2.5Gi
+    Low:            11Gi        10Gi       606Mi
+    High:             0B          0B          0B
+    Swap:          4.0Gi       2.7Gi       1.3Gi'
+    
     #MEMORY
-    #total  11Gi  free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }'
-    #used   9.7Gi   free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }'
-    #free   545Mi   free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$3"; }'
-    #shared 939Mi   free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$4"; }'
-    #buff/cache 2.4Gi   free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$5"; }'
-    #available 1.8Gi free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$6"; }'
+    #total  11Gi  
+    total_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }')
+    #used   9.7Gi   
+    used_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }')
+    #free   545Mi   
+    free_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$3"; }')
+    #shared 939Mi   
+    shared_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$4"; }')
+    #buff/cache 2.4Gi   
+    buff_cache_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$5"; }')
+    #available 1.8Gi 
+    available_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$6"; }')
 
     #Low
-    #total  11Gi  free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }'
-    #used   9.7Gi   free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }'
-    #free   545Mi   free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$3"; }'
+    #total  11Gi  
+    total_low_memory=$(free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1"; }')
+    #used   9.7Gi   
+    used_low_memory=$(free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2"; }')
+    #free   545Mi   
+    free_low_memory=$(free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3"; }')
 
     #High
-    #total  11Gi  free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }'
-    #used   9.7Gi   free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }'
-    #free   545Mi   free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$3"; }'
+    #total  11Gi  
+    total_high_memory=$(free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1"; }')
+    #used   9.7Gi   
+    used_high_memory=$(free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2"; }')
+    #free   545Mi   
+    free_high_memory=$(free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3"; }')
 
     #Swap
-    #total  11Gi  free -hl | sed -n '4p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }'
-    #used   9.7Gi   free -hl | sed -n '4p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }'
-    #free   545Mi   free -hl | sed -n '4p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$3"; }'
-
+    #total  11Gi  
+    total_swap_memory=$(free -hl | sed -n '5p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1"; }')
+    #used   9.7Gi   
+    used_swap_memory=$(free -hl | sed -n '5p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2"; }')
+    #free   545Mi   
+    free_swap_memory=$(free -hl | sed -n '5p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3"; }')
 }
 
 function read_disk_storage(){
-    Filesystem      Size  Used Avail Use% Mounted on
+    : 'Filesystem      Size  Used Avail Use% Mounted on
     tmpfs           1.2G  4.3M  1.2G   1% /run
     /dev/nvme0n1p7  249G  120G  117G  51% /
     tmpfs           5.8G   15M  5.8G   1% /dev/shm
     tmpfs           5.0M   12K  5.0M   1% /run/lock
     efivarfs        184K  122K   58K  68% /sys/firmware/efi/efivars
     /dev/nvme0n1p1   96M   33M   64M  34% /boot/efi
-    tmpfs           1.2G  2.5M  1.2G   1% /run/user/1000
+    tmpfs           1.2G  2.5M  1.2G   1% /run/user/1000'
 
 
     #Filesystem /dev/nvme0n1p7           df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)*/) { print "$1\n"; }'
@@ -119,7 +143,7 @@ function read_network_statistics(){
 }
 
 function read_process_information(){
-    USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+    : 'USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
     root           1  0.0  0.1 172488 16280 ?        Ss   17:15   0:09 /sbin/init splash
     root           2  0.0  0.0      0     0 ?        S    17:15   0:00 [kthreadd]
     root           3  0.0  0.0      0     0 ?        S    17:15   0:00 [pool_workqueue_release]
@@ -136,7 +160,7 @@ function read_process_information(){
     STAT: Process status.
     START: Start time of the process.
     TIME: Total accumulated CPU time.
-    COMMAND: The command that started the process.
+    COMMAND: The command that started the process.'
 
     #USER      root       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1\n"; }'
     #PID      1       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2\n"; }'
@@ -157,13 +181,57 @@ function logging(){
 }
 
 function configure_mail(){
+    sudo apt-get install postfix -y
+    sudo apt-get install sendmail -y
+    sudo apt-get remove sendmail-bin -y
+    sudo apt autoremove -y
+    sudo apt-get install -f
+
+    read -p "Enter SMTP Server Address:" smtp_address
+    read -p "Enter SMTP Server Port[TLS]:" smtp_port
+    read -p "Enter Sender Email:" sender_email
+    read -p "Enter App Password:" app_pass
+    sudo echo "[$smtp_address]:$smtp_port $sender_email:$app_pass" >  /etc/postfix/sasl/sasl_passwd
+    sudo postmap /etc/postfix/sasl/sasl_passwd
+    sudo chown root:root /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
+    sudo chmod 0600 /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
 
 
+    sudo echo "mydestination = $myhostname, localhost, localhost.localdomain
+    relayhost = [$smtp_address]:$smtp_port
+    mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+
+    # Enable SASL authentication
+    smtp_sasl_auth_enable = yes
+    smtp_sasl_security_options = noanonymous
+    smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd
+    smtp_tls_security_level = encrypt
+    smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt">> /etc/postfix/main.cf
+
+    sudo systemctl restart postfix
 }
 
 function alert(){
-
+    echo "alert"
 }
 
 function main_read_system(){
+    echo "reading"
 }
+
+function init_config(){
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt install sysstat -y
+    sudo apt install jq -y
+    configure_mail
+}
+
+function main(){
+    echo -e "${GREEN}${BOLD}Welcome to Symo [mini-SIEM bash project] by ${RED}${BOLD}Deep=⍜⎊⎈${NC}"
+    if [[ -e /usr/local/bin/symo.sh ]]; then
+        main_read_system
+    else
+        init_config
+    fi
+}
+read_memory_usage
