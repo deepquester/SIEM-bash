@@ -53,7 +53,8 @@ function read_cpu_usage(){
 function read_memory_usage(){
                     total        used        free      shared  buff/cache   available
         Mem:            11Gi       9.7Gi       545Mi       838Mi       2.4Gi       1.8Gi
-        Swap:          4.0Gi       768Ki       4.0Gi               
+        Swap:          4.0Gi       768Ki       4.0Gi               d
+        Ada
     #MEMORY
     #total  11Gi  free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }'
     #used   9.7Gi   free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }'
