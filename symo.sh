@@ -65,44 +65,59 @@ function read_memory_usage(){
     High:             0B          0B          0B
     Swap:          4.0Gi       2.7Gi       1.3Gi'
 
-    #MEMORY
-    #total  11Gi  
-    total_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$1"; }')
-    #used   9.7Gi   
-    used_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$2"; }')
-    #free   545Mi   
-    free_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$3"; }')
-    #shared 939Mi   
-    shared_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$4"; }')
-    #buff/cache 2.4Gi   
-    buff_cache_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$5"; }')
-    #available 1.8Gi 
-    available_memory=$(free -hl | sed -n '2p' | perl -ne 'if (/^Mem:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) { print "$6"; }')
+    total_memory=$(free -hl | sed -n '2p' | awk '{print $2}')
+    used_memory=$(free -hl | sed -n '2p' | awk '{print $3}')
+    free_memory=$(free -hl | sed -n '2p' | awk '{print $4}')
+    shared_memory=$(free -hl | sed -n '2p' | awk '{print $5}')
+    buff_cache_memory=$(free -hl | sed -n '2p' | awk '{print $6}')
+    available_memory=$(free -hl | sed -n '2p' | awk '{print $7}')
 
-    #Low
-    #total  11Gi  
-    total_low_memory=$(free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1"; }')
-    #used   9.7Gi   
-    used_low_memory=$(free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2"; }')
-    #free   545Mi   
-    free_low_memory=$(free -hl | sed -n '3p' | perl -ne 'if (/^Low:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3"; }')
+    total_low_memory=$(free -hl | sed -n '3p' | awk '{print $2}')
+    used_low_memory=$(free -hl | sed -n '3p' | awk '{print $3}')
+    free_low_memory=$(free -hl | sed -n '3p' | awk '{print $4}')
 
-    #High
-    #total  11Gi  
-    total_high_memory=$(free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1"; }')
-    #used   9.7Gi   
-    used_high_memory=$(free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2"; }')
-    #free   545Mi   
-    free_high_memory=$(free -hl | sed -n '4p' | perl -ne 'if (/^High:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3"; }')
+    total_high_memory=$(free -hl | sed -n '4p' | awk '{print $2}')
+    used_high_memory=$(free -hl | sed -n '4p' | awk '{print $3}')
+    free_high_memory=$(free -hl | sed -n '4p' | awk '{print $4}')
 
-    #Swap
-    #total  11Gi  
-    total_swap_memory=$(free -hl | sed -n '5p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1"; }')
-    #used   9.7Gi   
-    used_swap_memory=$(free -hl | sed -n '5p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2"; }')
-    #free   545Mi   
-    free_swap_memory=$(free -hl | sed -n '5p' | perl -ne 'if (/^Swap:\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3"; }')
+    total_swap_memory=$(free -hl | sed -n '5p' | awk '{print $2}')
+    used_swap_memory=$(free -hl | sed -n '5p' | awk '{print $3}')
+    free_swap_memory=$(free -hl | sed -n '5p' | awk '{print $4}')
+
+    # Create a JSON structure
+    memory_info='{
+        "id": "'"NIL"'",
+        "meta": {
+            "memory": {
+                "total": "'"$total_memory"'",
+                "used": "'"$used_memory"'",
+                "free": "'"$free_memory"'",
+                "shared": "'"$shared_memory"'",
+                "buff_cache": "'"$buff_cache_memory"'",
+                "available": "'"$available_memory"'"
+            },
+            "low": {
+                "total": "'"$total_low_memory"'",
+                "used": "'"$used_low_memory"'",
+                "free": "'"$free_low_memory"'"
+            },
+            "high": {
+                "total": "'"$total_high_memory"'",
+                "used": "'"$used_high_memory"'",
+                "free": "'"$free_high_memory"'"
+            },
+            "swap": {
+                "total": "'"$total_swap_memory"'",
+                "used": "'"$used_swap_memory"'",
+                "free": "'"$free_swap_memory"'"
+            }
+        }
+    }'
+
+    echo "$memory_info" | jq
 }
+
+read_memory_usage
 
 function read_disk_storage(){
     : 'Filesystem      Size  Used Avail Use% Mounted on
@@ -152,8 +167,6 @@ function read_disk_storage(){
     total_disk_array+=(])
     echo "${total_disk_array[@]}" | jq 
 }
-
-read_disk_storage
 
 
 function read_network_statistics() {
