@@ -113,29 +113,48 @@ function read_disk_storage(){
     efivarfs        184K  122K   58K  68% /sys/firmware/efi/efivars
     /dev/nvme0n1p1   96M   33M   64M  34% /boot/efi
     tmpfs           1.2G  2.5M  1.2G   1% /run/user/1000'
+    total_disk_array=()
     line_count=0
-    df -h | while IFS= read -r line; do
+
+    for line in $(df -h); do
+        ((line_count++))
         if [[ $line_count -eq 0 ]]; then
-            line_count=$(echo "$line_count" + 1 | bc)
             continue
         else
-            #Filesystem /dev/nvme0n1p7           
-            file_system_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+\s).*$/) { print "$1\n"; }')
-            #Size   1.2G        
-            size_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$2\n"; }')
-            #Used   4.3M      
-            used_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$3\n"; }')
-            #Avail  1.2G        
-            avail_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$4\n"; }')
-            #Use%   1%        
-            use_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$5\n"; }')
-            #Mounted on  /run        
-            mounted_on_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$6\n"; }')
-            line_count=$(echo "$line_count" + 1 | bc)
+            # Extracting values using awk
+            file_system_disk=$(echo "$line" | awk '{print $1}')
+            size_disk=$(echo "$line" | awk '{print $2}')
+            used_disk=$(echo "$line" | awk '{print $3}')
+            avail_disk=$(echo "$line" | awk '{print $4}')
+            use_disk=$(echo "$line" | awk '{print $5}')
+            mounted_on_disk=$(echo "$line" | awk '{print $6}')
+
+            # Creating a JSON-like structure for each disk
+            unit_disk_object='{
+                "id": "'"$line_count"'",
+                "meta": {
+                    "file_system": "'"$file_system_disk"'",
+                    "size": "'"$size_disk"'",
+                    "used": "'"$used_disk"'",
+                    "avail": "'"$avail_disk"'",
+                    "use": "'"$use_disk"'",
+                    "mounted_on": "'"$mounted_on_disk"'"
+                }
+            }'
+
+            total_disk_array+=("$unit_disk_object")
+            total_disk_array+=(,)
         fi
-    done    
-    echo "$size_disk"   
+    done
+
+    total_disk_array=("${total_disk_array[@]:0:$((${#total_disk_array[@]} - 1))}")
+    total_disk_array=("[" "${total_disk_array[@]}")
+    total_disk_array+=(])
+    echo "${total_disk_array[@]}" | jq 
 }
+
+read_disk_storage
+
 
 function read_network_statistics() {
     total_network_array=()
@@ -257,7 +276,6 @@ function read_process_information(){
         total_process_array+=(])
         echo "${total_process_array[@]}" | jq
 }
-read_process_information
 
 function logging(){
     /var/log/symo/H:M:S::D:M:Y.smlog
