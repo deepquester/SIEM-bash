@@ -140,15 +140,15 @@ function read_disk_storage(){
 function read_network_statistics() {
     total_network_array=()
     line_count=0
+    IFS=$'\n'  # Set Internal Field Separator to newline
 
-    netstat -i | while IFS= read -r line; do
+    for line in $(netstat -i); do
         ((line_count++))
 
         # Skip header lines
         if [ "$line_count" -le 2 ]; then
             continue
         fi
-
         # Extract relevant data from the line (modify these as needed)
         iface_network=$(echo "$line" | awk '{print $1}')
         mtu_network=$(echo "$line" | awk '{print $2}')
@@ -179,15 +179,15 @@ function read_network_statistics() {
                 "flg": "'"$flg_network"'"
             }
         }'
-
         total_network_array+=("$unit_network_object")
+        total_network_array+=(,)
     done
-
+    total_network_array=("${total_network_array[@]:0:$((${#total_network_array[@]}-1))}")
+    total_network_array=("[" "${total_network_array[@]}")
+    total_network_array+=(])
     # Print the JSON array
-    printf '[%s]\n' "${total_network_array[@]}"
+    printf '%s\n' "${total_network_array[@]}" | jq
 }
-
-read_network_statistics
 
 
 function read_process_information(){
@@ -214,67 +214,50 @@ function read_process_information(){
     total_process_array=()
     process_count=0
     for line in $(ps aux); do
-        # Process each line as needed
+        ((line_count++))
+
         if [[ $process_count -eq 0 ]]; then
-            process_count=$(echo "$process_count + 1" | bc)
+            process_count=$((process_count + 1))
             continue
         else
-        pid_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #CPU      0.0     
-        cpu_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #MEM      0.1       
-        mem_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #VSZ      172488      
-        vsz_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #RSS      16280       
-        rss_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #TTY      ?       
-        tty_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #STAT      Ss      
-        stat_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #START      17:15      
-        start_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #TIME      0:09     
-        time_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #COMMAND      /sbin/init splash       
-        command_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')    
+            # Extracting values using awk
+            pid_process=$(echo "$line" | awk '{print $2}')
+            cpu_process=$(echo "$line" | awk '{print $3}')
+            mem_process=$(echo "$line" | awk '{print $4}')
+            vsz_process=$(echo "$line" | awk '{print $5}')
+            rss_process=$(echo "$line" | awk '{print $6}')
+            tty_process=$(echo "$line" | awk '{print $7}')
+            stat_process=$(echo "$line" | awk '{print $8}')
+            start_process=$(echo "$line" | awk '{print $9}')
+            time_process=$(echo "$line" | awk '{print $10}')
+            command_process=$(echo "$line" | awk '{for (i=11; i<=NF; i++) printf "%s ", $i; print ""}')
+
+            unit_process_object='{
+                "id": '"$process_count"',
+                "meta": {
+                    "pid": '"$pid_process"',
+                    "cpu": '"$cpu_process"',
+                    "mem": '"$mem_process"',
+                    "vsz": '"$vsz_process"',
+                    "rss": '"$rss_process"',
+                    "tty": "'"$tty_process"'",
+                    "stat": "'"$stat_process"'",
+                    "start": "'"$start_process"'",
+                    "time": "'"$time_process"'",
+                    "command": "'"$command_process"'"
+                }
+            }'
+
+            total_process_array+=("$unit_process_object")
+            total_process_array+=(,)
         fi
-        unit_process_object='{
-            "id":'
-        unit_process_object+="$process_count"
-        unit_process_object+=',
-            "meta":{
-                "pid":'
-        unit_process_object+="$pid_process," 
-        unit_process_object+=' "cpu": '
-        unit_process_object+="$cpu_process,"
-        unit_process_object+=' "mem": '
-        unit_process_object+="$mem_process,"
-        unit_process_object+=' "vsz": '
-        unit_process_object+="$vsz_process,"
-        unit_process_object+=' "rss": '
-        unit_process_object+="$rss_process,"
-        unit_process_object+=' "tty": '
-        unit_process_object+="$tty_process,"
-        unit_process_object+=' "stat": '
-        unit_process_object+="$stat_process,"
-        unit_process_object+=' "start": '
-        unit_process_object+="$start_process,"
-        unit_process_object+=' "time": '
-        unit_process_object+="$time_process,"
-        unit_process_object+=' "command": '
-        unit_process_object+="$command_process"
-        unit_process_object+='}
-        }'
-        total_process_array+=("$unit_process_object")
-        total_process_array+=(,)
-        process_count=$(echo "$process_count + 1" | bc)
     done
         total_process_array=("${total_process_array[@]:0:$((${#total_process_array[@]}-1))}")
         total_process_array=("[" "${total_process_array[@]}")
         total_process_array+=(])
         echo "${total_process_array[@]}" | jq
 }
+read_process_information
 
 function logging(){
     /var/log/symo/H:M:S::D:M:Y.smlog
