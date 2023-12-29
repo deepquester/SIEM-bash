@@ -339,7 +339,8 @@ function logging(){
         fi
     }
     function save_log(){
-        if [[ ""$1"" -eq 1 ]]; then
+        #to avoid syntax error
+        if ! echo "$1" | grep -E '^[0-9]{2}:[0-9]{2}:[0-9]{2}::[0-9]{2}:[0-9]{2}:[0-9]{4}$' > /dev/null; then
             echo -e "${RED}${BOLD}Something went wrong!${NC}"
         else
             #system_info
