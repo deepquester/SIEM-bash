@@ -113,34 +113,69 @@ function read_disk_storage(){
     efivarfs        184K  122K   58K  68% /sys/firmware/efi/efivars
     /dev/nvme0n1p1   96M   33M   64M  34% /boot/efi
     tmpfs           1.2G  2.5M  1.2G   1% /run/user/1000'
-
-
-    #Filesystem /dev/nvme0n1p7           df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)*/) { print "$1\n"; }'
-    #Size   1.2G        df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$2\n"; }'
-    #Used   4.3M      df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$3\n"; }'
-    #Avail  1.2G        df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$4\n"; }'
-    #Use%   1%        df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$5\n"; }'
-    #Mounted on  /run        df -h | sed -n '7p' | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$6\n"; }'
+    line_count=0
+    df -h | while IFS= read -r line; do
+        if [[ $line_count -eq 0 ]]; then
+            line_count=$(echo "$line_count" + 1 | bc)
+            continue
+        else
+            #Filesystem /dev/nvme0n1p7           
+            file_system_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+\s).*$/) { print "$1\n"; }')
+            #Size   1.2G        
+            size_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$2\n"; }')
+            #Used   4.3M      
+            used_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$3\n"; }')
+            #Avail  1.2G        
+            avail_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$4\n"; }')
+            #Use%   1%        
+            use_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$5\n"; }')
+            #Mounted on  /run        
+            mounted_on_disk=$(echo "$line" | perl -ne 'if (/^([\w\/]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\w\/]+)$/) { print "$6\n"; }')
+            line_count=$(echo "$line_count" + 1 | bc)
+        fi
+    done    
+    echo "$size_disk"   
 }
 
 function read_network_statistics(){
-    Kernel Interface table
+    : 'Kernel Interface table
     Iface             MTU    RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg
     lo              65536   112558      0      0 0        112558      0      0      0 LRU
-    wlp0s20f3        1500  4691780      0      0 0       1057684      0      0      0 BMRU
+    wlp0s20f3        1500  4691780      0      0 0       1057684      0      0      0 BMRU'
 
-    #Iface  lo        netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #MTU   65536     netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #RX-OK  112558       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #RX-ERR   0      netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #RX-DRP     0       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #RX-OVR   0        netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #TX-OK   112558      netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #TX-ERR  0        netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #TX-DRP   0        netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #TX-OVR      0         netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
-    #Flg      LRU       netstat -i | sed -n '3p' | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
+    line_count=0
+    netstat -i | while IFS= read -r line; do
+        if [[ $line_count -eq 0 || $line_count -eq 1 ]]; then
+            line_count=$(echo "$line_count" + 1 | bc)
+            continue
+        else
+            #Iface  lo        
+            iface_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$1\n"; }')
+            #MTU   65536     
+            mtu_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$2\n"; }')
+            #RX-OK  112558       
+            rx_ok_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3\n"; }')
+            #RX-ERR   0     
+            rx_err_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$4\n"; }')
+            #RX-DRP     0       
+            rx_drp_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$5\n"; }')
+            #RX-OVR   0        
+            rx_ovr_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$6\n"; }')
+            #TX-OK   112558      
+            tx_ok_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$7\n"; }')
+            #TX-ERR  0        
+            tx_err_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$8\n"; }')
+            #TX-DRP   0        
+            tx_drp_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$9\n"; }')
+            #TX-OVR      0         
+            tx_ovr_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$10\n"; }')
+            #Flg      LRU       
+            flg_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }')
+            line_count=$(echo "$line_count" + 1 | bc)
+        fi
+    done
 }
+read_network_statistics
 
 function read_process_information(){
     : 'USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -227,26 +262,6 @@ function read_process_information(){
         total_process_array+=(])
         echo "${total_process_array[@]}" | jq
 }
-read_process_information
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function logging(){
     /var/log/symo/H:M:S::D:M:Y.smlog
