@@ -8,6 +8,10 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'  # No Color
 
+#Read-Only variables
+readonly log_dir="/var/log/symo"
+
+
 function read_os(){
     #example Ubuntu
     cat /etc/os-release | grep -w "NAME=" | cut -c 7- | sed 's/.$//'
@@ -32,14 +36,40 @@ function read_system_uptime(){
     #example 2023-12-28 17:15:35
     uptime -s
 }
-function read_system_timestamp(){
-    $date=$(date +'%d-%m-%Y')
-    #example 28-12-2023
-    $time=$(date +'%H:%M:%S')
-    #example 18:04:42
-    $day=$(date +'%A')
-    #example Thursday
+
+function read_system_info(){
+    local os=$(read_os)
+    local os_version=$(read_os_version)
+    local kernel_version=$(read_kernel_version)
+    local system_architecture=$(read_system_architecture)
+    local system_uptime=$(read_system_uptime)
+
+    local system_info='{
+        "os": "'"$os"'",
+        "os_version": "'"$os_version"'",
+        "kernel_version": "'"$kernel_version"'",
+        "system_architecture": "'"$system_architecture"'",
+        "system_uptime": "'"$system_uptime"'"
+    }'
+    echo "$system_info" | jq
 }
+
+function read_system_timestamp(){
+    local date=$(date +'%d:%m:%Y')
+    #example 28-12-2023
+    local time=$(date +'%H:%M:%S')
+    #example 18:04:42
+    local day=$(date +'%A')
+    #example Thursday
+
+    timestamp_info='{
+        "date": "'"$date"'",
+        "time": "'"$time"'",
+        "day": "'"$day"'"
+    }' 
+    echo "$timestamp_info" | jq
+}
+
 function read_cpu_usage(){
     : '#example
     {
@@ -56,8 +86,8 @@ function read_cpu_usage(){
         "idle": 90.21
     } '
     mpstat -o JSON | jq '.sysstat.hosts[0].statistics[0]."cpu-load"[0]'
-
 }
+
 function read_memory_usage(){
     : 'total        used        free      shared  buff/cache   available
     Mem:            11Gi       8.9Gi       606Mi       1.0Gi       3.3Gi       2.5Gi
@@ -117,8 +147,6 @@ function read_memory_usage(){
     echo "$memory_info" | jq
 }
 
-read_memory_usage
-
 function read_disk_storage(){
     : 'Filesystem      Size  Used Avail Use% Mounted on
     tmpfs           1.2G  4.3M  1.2G   1% /run
@@ -131,9 +159,10 @@ function read_disk_storage(){
     total_disk_array=()
     line_count=0
 
+    IFS=$'\n'
     for line in $(df -h); do
-        ((line_count++))
         if [[ $line_count -eq 0 ]]; then
+            ((line_count++))
             continue
         else
             # Extracting values using awk
@@ -167,7 +196,6 @@ function read_disk_storage(){
     total_disk_array+=(])
     echo "${total_disk_array[@]}" | jq 
 }
-
 
 function read_network_statistics() {
     total_network_array=()
@@ -291,8 +319,50 @@ function read_process_information(){
 }
 
 function logging(){
-    /var/log/symo/H:M:S::D:M:Y.smlog
+    function make_parent_log_dir(){
+        mkdir -p $log_dir
+        if [[ $? -eq 0 ]]; then
+            return 0
+        else
+            return 1
+        fi
+    }
+    function make_timestamp_log_dir(){
+        local timestamp=$(read_system_timestamp)
+        local date=$(echo "$timestamp" | jq '.date' | sed -E 's/"*//g')
+        local time=$(echo "$timestamp" | jq '.time' | sed -E 's/"*//g')
+        mkdir -p $log_dir/$time::$date
+        if [[ $? -eq 0 ]]; then
+            echo "$time::$date"
+        else
+            return 1
+        fi
+    }
+    function save_log(){
+        if [[ ""$1"" -eq 1 ]]; then
+            echo -e "${RED}${BOLD}Something went wrong!${NC}"
+        else
+            #system_info
+            echo "$(read_system_info)" > "$log_dir/$1/system.smlog"
+            #network
+            echo "$(read_network_statistics)" > "$log_dir/$1/network.smlog"
+            #disk
+            echo "$(read_disk_storage)" > "$log_dir/$1/disk.smlog"
+            #memory
+            echo "$(read_memory_usage)" > "$log_dir/$1/memory.smlog"
+            #cpu
+            echo "$(read_cpu_usage)" > "$log_dir/$1/cpu.smlog"
+            #process
+            echo "$(read_process_information)" > "$log_dir/$1/process.smlog"
+        fi
+    }
+    if [[ ! -e $log_dir ]]; then
+        make_parent_log_dir
+    fi
+    timestamp_dir=$(make_timestamp_log_dir)
+    save_log $timestamp_dir
 }
+logging
 
 function configure_mail(){
     sudo apt-get install postfix -y
