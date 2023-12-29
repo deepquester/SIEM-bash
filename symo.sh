@@ -167,21 +167,29 @@ function read_process_information(){
     process_count=0
     for line in $(ps aux); do
         # Process each line as needed
-        #PID      1
         if [[ $process_count -eq 0 ]]; then
             process_count=$(echo "$process_count + 1" | bc)
             continue
         else
-        pid=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
-        #CPU      0.0       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$3\n"; }'
-        #MEM      0.1       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$4\n"; }'
-        #VSZ      172488       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$5\n"; }'
-        #RSS      16280       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$6\n"; }'
-        #TTY      ?       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$7\n"; }'
-        #STAT      Ss       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$8\n"; }'
-        #START      17:15       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$9\n"; }'
-        #TIME      0:09       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$10\n"; }'
-        #COMMAND      /sbin/init splash       $line | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }'
+        pid_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #CPU      0.0     
+        cpu_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #MEM      0.1       
+        mem_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #VSZ      172488      
+        vsz_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #RSS      16280       
+        rss_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #TTY      ?       
+        tty_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #STAT      Ss      
+        stat_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #START      17:15      
+        start_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #TIME      0:09     
+        time_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')
+        #COMMAND      /sbin/init splash       
+        command_process=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$/) { print "$2\n"; }')    
         fi
         unit_process_object='{
             "id":'
@@ -189,18 +197,56 @@ function read_process_information(){
         unit_process_object+=',
             "meta":{
                 "pid":'
-        unit_process_object+="$pid"
-                
+        unit_process_object+="$pid_process," 
+        unit_process_object+=' "cpu": '
+        unit_process_object+="$cpu_process,"
+        unit_process_object+=' "mem": '
+        unit_process_object+="$mem_process,"
+        unit_process_object+=' "vsz": '
+        unit_process_object+="$vsz_process,"
+        unit_process_object+=' "rss": '
+        unit_process_object+="$rss_process,"
+        unit_process_object+=' "tty": '
+        unit_process_object+="$tty_process,"
+        unit_process_object+=' "stat": '
+        unit_process_object+="$stat_process,"
+        unit_process_object+=' "start": '
+        unit_process_object+="$start_process,"
+        unit_process_object+=' "time": '
+        unit_process_object+="$time_process,"
+        unit_process_object+=' "command": '
+        unit_process_object+="$command_process"
         unit_process_object+='}
         }'
         total_process_array+=("$unit_process_object")
         total_process_array+=(,)
         process_count=$(echo "$process_count + 1" | bc)
-        echo "${total_process_array[@]}"
     done
-        total_process_array=$(echo "${total_process_array[@]}" | sed -E 's/.*[,]$//')
+        total_process_array=("${total_process_array[@]:0:$((${#total_process_array[@]}-1))}")
+        total_process_array=("[" "${total_process_array[@]}")
+        total_process_array+=(])
+        echo "${total_process_array[@]}" | jq
 }
 read_process_information
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function logging(){
     /var/log/symo/H:M:S::D:M:Y.smlog
