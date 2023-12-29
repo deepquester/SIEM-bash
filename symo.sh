@@ -142,7 +142,8 @@ function read_network_statistics(){
     Iface             MTU    RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg
     lo              65536   112558      0      0 0        112558      0      0      0 LRU
     wlp0s20f3        1500  4691780      0      0 0       1057684      0      0      0 BMRU'
-
+    
+    total_network_array=()
     line_count=0
     netstat -i | while IFS= read -r line; do
         if [[ $line_count -eq 0 || $line_count -eq 1 ]]; then
@@ -171,9 +172,46 @@ function read_network_statistics(){
             tx_ovr_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$10\n"; }')
             #Flg      LRU       
             flg_network=$(echo "$line" | perl -ne 'if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) { print "$11\n"; }')
+#TODO fix id in if else
+            unit_network_object='{'
+            unit_network_object+='"id": '
+            unit_network_object+="$line_count, "
+            unit_network_object+='"meta": {'
+            unit_network_object+='"iface": '
+            unit_network_object+="$iface_network, "
+            unit_network_object+='"mtu": '
+            unit_network_object+="$mtu_network, "
+            unit_network_object+='"rx_ok": '
+            unit_network_object+="$rx_ok_network, "
+            unit_network_object+='"rx_err": '
+            unit_network_object+="$rx_err_network, "
+            unit_network_object+='"rx_drp": '
+            unit_network_object+="$rx_drp_network, "
+            unit_network_object+='"rx_ovr": '
+            unit_network_object+="$rx_ovr_network, "
+            unit_network_object+='"tx_ok": '
+            unit_network_object+="$tx_ok_network, "
+            unit_network_object+='"tx_err": '
+            unit_network_object+="$tx_err_network, "
+            unit_network_object+='"tx_drp": '
+            unit_network_object+="$tx_drp_network, "
+            unit_network_object+='"tx_ovr": '
+            unit_network_object+="$tx_ovr_network, "
+            unit_network_object+='"flg": '
+            unit_network_object+="$flg_network"
+            unit_network_object+='}
+            }'
+
+            total_network_array+=("$unit_network_object")
+            #total_network_array+=(,)
             line_count=$(echo "$line_count" + 1 | bc)
         fi
-    done
+        done
+            echo "$flg_network"
+            #total_network_array=("${total_network_array[@]:0:$((${#total_network_array[@]}-1))}")
+            #total_network_array=("[" "${total_network_array[@]}")
+            #total_network_array+=(])
+            #echo "${total_network_array[@]}" 
 }
 read_network_statistics
 
