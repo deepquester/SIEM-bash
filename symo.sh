@@ -319,9 +319,15 @@ function read_process_information(){
 }
 
 function monitor_cpu_usage(){
-    echo "$1"
-    #cat $timestamp_dir/cpu.smlog
+    a="/var/log/symo/13:42:06::30:12:2023"
+    idle=$(cat "$a/cpu.smlog" | jq '.idle')
+    if [[ "$(echo "$idle < 20" | bc -l)" -eq 1 ]]; then
+        echo "alert"
+    fi
 }
+
+monitor_cpu_usage
+
 function logging(){
     declare -g parent_with_timestamp_dir="N"
     function make_parent_log_dir(){
@@ -380,7 +386,6 @@ function logging(){
     save_log "$time::$date"
     monitor_cpu_usage "$log_dir/$time::$date"
 }
-logging
 
 function configure_mail(){
     apt-get install postfix -y
