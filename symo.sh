@@ -318,6 +318,10 @@ function read_process_information(){
         echo "${total_process_array[@]}" | jq
 }
 
+function monitor_cpu_usage(){
+    echo "$1"
+    #cat $timestamp_dir/cpu.smlog
+}
 function logging(){
     function make_parent_log_dir(){
         mkdir -p $log_dir
@@ -328,10 +332,12 @@ function logging(){
         fi
     }
     function make_timestamp_log_dir(){
+        echo "$parent_with_timestamp_dir"
         local timestamp=$(read_system_timestamp)
         local date=$(echo "$timestamp" | jq '.date' | sed -E 's/"*//g')
         local time=$(echo "$timestamp" | jq '.time' | sed -E 's/"*//g')
-        mkdir -p $log_dir/$time::$date
+        parent_with_timestamp_dir="$log_dir"/"$time::$date"
+        mkdir -p "$parent_with_timestamp_dir"
         if [[ $? -eq 0 ]]; then
             echo "$time::$date"
         else
@@ -360,28 +366,30 @@ function logging(){
         make_parent_log_dir
     fi
     timestamp_dir=$(make_timestamp_log_dir)
-    save_log $timestamp_dir
+    #echo "$parent_with_timestamp_dir"
+    #save_log $timestamp_dir
+    #monitor_cpu_usage $parent_with_timestamp_dir
 }
 logging
 
 function configure_mail(){
-    sudo apt-get install postfix -y
-    sudo apt-get install sendmail -y
-    sudo apt-get remove sendmail-bin -y
-    sudo apt autoremove -y
-    sudo apt-get install -f
+    apt-get install postfix -y
+    apt-get install sendmail -y
+    apt-get remove sendmail-bin -y
+    apt autoremove -y
+    apt-get install -f
 
     read -p "Enter SMTP Server Address:" smtp_address
     read -p "Enter SMTP Server Port[TLS]:" smtp_port
     read -p "Enter Sender Email:" sender_email
     read -p "Enter App Password:" app_pass
-    sudo echo "[$smtp_address]:$smtp_port $sender_email:$app_pass" >  /etc/postfix/sasl/sasl_passwd
-    sudo postmap /etc/postfix/sasl/sasl_passwd
-    sudo chown root:root /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
-    sudo chmod 0600 /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
+    echo "[$smtp_address]:$smtp_port $sender_email:$app_pass" >  /etc/postfix/sasl/sasl_passwd
+    postmap /etc/postfix/sasl/sasl_passwd
+    chown root:root /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
+    chmod 0600 /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
 
 
-    sudo echo "mydestination = $myhostname, localhost, localhost.localdomain
+    echo "mydestination = $myhostname, localhost, localhost.localdomain
     relayhost = [$smtp_address]:$smtp_port
     mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
 
@@ -404,9 +412,9 @@ function main_read_system(){
 }
 
 function init_config(){
-    sudo apt-get update && sudo apt-get upgrade
-    sudo apt install sysstat -y
-    sudo apt install jq -y
+    apt-get update && apt-get upgrade
+    apt install sysstat -y
+    apt install jq -y
     configure_mail
 }
 
