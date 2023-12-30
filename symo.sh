@@ -14,7 +14,7 @@ NC='\033[0m'  # No Color
 readonly log_dir="/var/log/symo"
 
 #Status
-ALERT_VALUE=0 #0 - No alert, 1 - alert
+ALERT_VALUE=False #False - No alert, True - alert
 ALERT_LEVEL="NILL" #HIGH LOW MEDIUM NILL
 ALERT_DESC="NILL"
 
@@ -326,7 +326,7 @@ function read_process_information(){
 
 function alert_metrics(){
     if [[ $1 =~ "HIGH" || $1 == "MEDIUM" || $1 == "LOW" ]]; then
-        ALERT_VALUE=1
+        ALERT_VALUE="True"
         ALERT_LEVEL="$1"
         if [[ $2 ]]; then
             ALERT_DESC="$2"
@@ -335,7 +335,7 @@ function alert_metrics(){
         fi
         return 0
     elif [[ $1 =~ "NILL" ]]; then
-        ALERT_VALUE=0
+        ALERT_VALUE="False"
         ALERT_LEVEL="NILL"
         ALERT_DESC="NILL"
         return 0
@@ -355,6 +355,14 @@ function alert_metrics(){
         fi
         echo -e "${BLUE}Alert Description: ${BOLD}'""$ALERT_DESC""'${NC}"
         echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}"
+    elif [[ $1 =~ "SAVE" ]]; then
+        status_log_object='{
+        "alert": '"\"""$ALERT_VALUE""\","'
+        "level": '"\"""$ALERT_LEVEL""\","'
+        "description": '"\"""$ALERT_DESC""\"}"
+        echo "$status_log_object" | jq
+        return 1
+        #$log_dir/&status.smlog
     fi
 }
 
@@ -364,8 +372,10 @@ function monitor_cpu_usage(){
     cpu_utilization=$(echo "100 - $idle" | bc -l)
     if [[ $cpu_utilization > 80 ]]; then   
         alert_metrics "MEDIUM" "CPU Utilization is High! Metrics=$cpu_utilization%"
+        #return 0    
     fi
-    alert_metrics "ECHO"
+    alert_metrics "SAVE"
+    return 1
 }
 monitor_cpu_usage
 function convert_to_gb() {
