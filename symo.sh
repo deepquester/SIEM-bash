@@ -5,6 +5,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+ORANGE='\033[0;33m'
+PURPLE='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m'  # No Color
 
@@ -323,41 +325,49 @@ function read_process_information(){
 }
 
 function alert_metrics(){
-    if [[ $1 -eq 0 || $1 -eq 1 ]]; then
-        if [[ $1 -eq 0 ]]; then
-            ALERT_VALUE=0 #NO ALERT
-            ALERT_LEVEL="NILL"
-            return 0
-        elif [[ $1 -eq 1 ]]; then
-            ALERT_VALUE=1 #ALERT
+    if [[ $1 =~ "HIGH" || $1 == "MEDIUM" || $1 == "LOW" ]]; then
+        ALERT_VALUE=1
+        ALERT_LEVEL="$1"
+        if [[ $2 ]]; then
+            ALERT_DESC="$2"
+        else
+            return 1
         fi
-    fi
-    if [[ $2 =~ "HIGH" || $2 == "MEDIUM" || $2 == "LOW" || $2 == "NILL" ]]; then
-        if [[ ! $2 =~ "NILL" ]]; then
-            ALERT_LEVEL="$2"
-            if [[ $3 ]]; then
-                ALERT_DESC="$3"
-            else
-                return 1
-            fi
-            return 0
+        return 0
+    elif [[ $1 =~ "NILL" ]]; then
+        ALERT_VALUE=0
+        ALERT_LEVEL="NILL"
+        ALERT_DESC="NILL"
+        return 0
+    elif [[ $1 =~ "ECHO" ]]; then
+        echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}" 
+        if [[ $ALERT_VALUE == 0 ]]; then
+            echo -e "${GREEN}Alert:False${NC}"
+        else
+            echo -e "${RED}Alert:${BOLD}True${NC}"
         fi
+        if [[ $ALERT_LEVEL == "HIGH" ]]; then
+            echo -e "${RED}Alert Level: ${BOLD}$ALERT_LEVEL${NC}"
+        elif [[ $ALERT_LEVEL == "MEDIUM" ]]; then
+            echo -e "${YELLOW}Alert Level: ${BOLD}$ALERT_LEVEL${NC}"
+        elif [[ $ALERT_LEVEL == "LOW" ]]; then
+            echo -e "${GREEN}Alert Level: $ALERT_LEVEL${NC}"
+        fi
+        echo -e "${BLUE}Alert Description: ${BOLD}'""$ALERT_DESC""'${NC}"
+        echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}"
     fi
-    return 0
 }
 
 function monitor_cpu_usage(){
     a="/var/log/symo/13:42:06::30:12:2023"
     idle=$(cat "$a/cpu.smlog" | jq '.idle')
-    if [[ "$(echo "$idle < 20" | bc -l)" -eq 1 ]]; then
-        alert_metrics 1 HIGH
-    elif [[ "$(echo "$idle > 20" | bc -l)" -eq 1 ]]; then
-        echo "alert"
-    elif [[ "$(echo "$idle > 15" | bc -l)" -eq 1 ]]; then
-        echo "alert"
+    cpu_utilization=$(echo "100 - $idle" | bc -l)
+    if [[ $cpu_utilization > 80 ]]; then   
+        alert_metrics "MEDIUM" "CPU Utilization is High! Metrics=$cpu_utilization%"
     fi
+    alert_metrics "ECHO"
 }
-
+monitor_cpu_usage
 function convert_to_gb() {
     input=$1
     unit=$(echo $input | sed -n -E 's/([0-9.]+)([KkMmGgTtPpEeZzYy])?.?/\2/p' | tr '[:lower:]' '[:upper:]')
@@ -385,7 +395,7 @@ function convert_to_gb() {
 function monitor_memory_usage(){
     a="/var/log/symo/13:42:06::30:12:2023"
     
-    memory_log=$(cat "$a/memory.smlog")
+    memory_log=$(cat "$1/memory.smlog")
 
     local total_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.total')
     total_memory=$(convert_to_gb "$total_memory_without_conversion")
@@ -426,15 +436,14 @@ function monitor_memory_usage(){
     buff_cache_utilization=$(echo "scale=2; ($buff_cache_memory / $total_memory) * 100" | bc -l)
     swap_utilization=$(echo "scale=2; ($swap_used_memory / $swap_total_memory) * 100" | bc -l)
     if [[ "$(echo "$memory_utilization > 0" | bc -l)" -eq 1 ]]; then
-        alert_metrics 1 "HIGH" "Memory Utilization $memory_utilization is High!" 
+        alert_metrics "HIGH" "Memory Utilization $memory_utilization is High!" 
     elif [[ "$(echo "$buff_cache_utilization > 90" | bc -l)" -eq 1 ]]; then
-        alert_metrics 1 "HIGH" "Memory buff_cache utilization $buff_cache_utilization is High!"
+        alert_metrics "HIGH" "Memory buff_cache utilization $buff_cache_utilization is High!"
     elif [[ "$(echo "$swap_utilization > 90" | bc -l)" -eq 1 ]]; then
-        alert_metrics 1 "HIGH" "Memory swap Utilization $swap_utilization is High!"
+        alert_metrics "HIGH" "Memory swap Utilization $swap_utilization is High!"
     fi
     echo "$ALERT_VALUE $ALERT_LEVEL $ALERT_DESC"
 }
-monitor_memory_usage
 
 function logging(){
     declare -g parent_with_timestamp_dir="N"
@@ -492,7 +501,6 @@ function logging(){
     date=$(echo "${returned_timestamp_dir[@]}" | awk '{print $3}')
     make_dir_log_timestamp "$timestamp_dir" "$time" "$date" 2>&1 >/dev/null
     save_log "$time::$date"
-    monitor_cpu_usage "$log_dir/$time::$date"
 }
 
 function configure_mail(){
