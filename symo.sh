@@ -323,6 +323,7 @@ function monitor_cpu_usage(){
     #cat $timestamp_dir/cpu.smlog
 }
 function logging(){
+    declare -g parent_with_timestamp_dir="N"
     function make_parent_log_dir(){
         mkdir -p $log_dir
         if [[ $? -eq 0 ]]; then
@@ -331,19 +332,25 @@ function logging(){
             return 1
         fi
     }
-    function make_timestamp_log_dir(){
-        echo "$parent_with_timestamp_dir"
-        local timestamp=$(read_system_timestamp)
-        local date=$(echo "$timestamp" | jq '.date' | sed -E 's/"*//g')
-        local time=$(echo "$timestamp" | jq '.time' | sed -E 's/"*//g')
-        parent_with_timestamp_dir="$log_dir"/"$time::$date"
-        mkdir -p "$parent_with_timestamp_dir"
+    
+    function make_dir_log_timestamp(){
+        mkdir -p "$1"
         if [[ $? -eq 0 ]]; then
-            echo "$time::$date"
+            echo "$2::$3"
         else
             return 1
         fi
     }
+
+    function return_timestamp_log_dir(){
+        local timestamp=$(read_system_timestamp)
+        local date=$(echo "$timestamp" | jq '.date' | sed -E 's/"*//g')
+        local time=$(echo "$timestamp" | jq '.time' | sed -E 's/"*//g')
+        timestamp_log_dir="$log_dir/$time::$date"
+        return_array=("$timestamp_log_dir" "$time" "$date")
+        echo "${return_array[@]}"
+    }
+
     function save_log(){
         if ! echo "$1" | grep -E '^[0-9]{2}:[0-9]{2}:[0-9]{2}::[0-9]{2}:[0-9]{2}:[0-9]{4}$' > /dev/null; then
             echo -e "${RED}${BOLD}Something went wrong!${NC}"
@@ -365,10 +372,13 @@ function logging(){
     if [[ ! -e $log_dir ]]; then
         make_parent_log_dir
     fi
-    timestamp_dir=$(make_timestamp_log_dir)
-    #echo "$parent_with_timestamp_dir"
-    #save_log $timestamp_dir
-    #monitor_cpu_usage $parent_with_timestamp_dir
+    returned_timestamp_dir=$(return_timestamp_log_dir)
+    timestamp_dir=$(echo "${returned_timestamp_dir[@]}" | awk '{print $1}')
+    time=$(echo "${returned_timestamp_dir[@]}" | awk '{print $2}')
+    date=$(echo "${returned_timestamp_dir[@]}" | awk '{print $3}')
+    make_dir_log_timestamp "$timestamp_dir" "$time" "$date" 2>&1 >/dev/null
+    save_log "$time::$date"
+    monitor_cpu_usage "$log_dir/$time::$date"
 }
 logging
 
