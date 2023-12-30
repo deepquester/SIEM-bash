@@ -11,6 +11,9 @@ NC='\033[0m'  # No Color
 #Read-Only variables
 readonly log_dir="/var/log/symo"
 
+#Status
+ALERT_VALUE=1 #1 - No alert, 0 - alert
+ALERT_LEVEL="HIGH" #HIGH LOW MEDIUM NILL
 
 function read_os(){
     #example Ubuntu
@@ -318,10 +321,31 @@ function read_process_information(){
         echo "${total_process_array[@]}" | jq
 }
 
+function alert_metrics(){
+    if [[ $1 -eq 0 || $1 -eq 1 ]]; then
+        if [[ $1 -eq 0 ]]; then
+            ALERT_VALUE=0 //NO ALERT
+        elif [[ $1 -eq 1 ]]; then
+            ALERT_VALUE=1 //ALERT
+            ALERT_LEVEL="NILL"
+        fi
+        return 1
+    fi
+    if [[ $2 == "HIGH" || $2 == "MEDIUM" || $2 == "LOW" || $2 == "NILL" ]]; then
+            ALERT_LEVEL="$2"
+            return 1
+    fi
+    return 0
+}
+
 function monitor_cpu_usage(){
     a="/var/log/symo/13:42:06::30:12:2023"
     idle=$(cat "$a/cpu.smlog" | jq '.idle')
     if [[ "$(echo "$idle < 20" | bc -l)" -eq 1 ]]; then
+        alert_metrics 1 HIGH
+    elif [[ "$(echo "$idle > 20" | bc -l)" -eq 1 ]]; then
+        echo "alert"
+    elif [[ "$(echo "$idle > 15" | bc -l)" -eq 1 ]]; then
         echo "alert"
     fi
 }
