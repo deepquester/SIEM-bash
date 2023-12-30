@@ -12,35 +12,36 @@ NC='\033[0m'  # No Color
 readonly log_dir="/var/log/symo"
 
 #Status
-ALERT_VALUE=1 #1 - No alert, 0 - alert
-ALERT_LEVEL="HIGH" #HIGH LOW MEDIUM NILL
-
-function read_os(){
-    #example Ubuntu
-    cat /etc/os-release | grep -w "NAME=" | cut -c 7- | sed 's/.$//'
-} 
-
-function read_os_version(){
-    #example 23.10 (Mantic Minotaur)
-    cat /etc/os-release | grep "VERSION=" | cut -c 10- | sed 's/.$//'
-}
-
-function read_kernel_version(){
-    #example 6.6.8
-    uname -r
-}
-
-function read_system_architecture(){
-    #example x86_64
-    uname -p
-}
-
-function read_system_uptime(){
-    #example 2023-12-28 17:15:35
-    uptime -s
-}
+ALERT_VALUE=0 #0 - No alert, 1 - alert
+ALERT_LEVEL="NILL" #HIGH LOW MEDIUM NILL
+ALERT_DESC="NILL"
 
 function read_system_info(){
+    function read_os(){
+        #example Ubuntu
+        cat /etc/os-release | grep -w "NAME=" | cut -c 7- | sed 's/.$//'
+    } 
+
+    function read_os_version(){
+        #example 23.10 (Mantic Minotaur)
+        cat /etc/os-release | grep "VERSION=" | cut -c 10- | sed 's/.$//'
+    }
+
+    function read_kernel_version(){
+        #example 6.6.8
+        uname -r
+    }
+
+    function read_system_architecture(){
+        #example x86_64
+        uname -p
+    }
+
+    function read_system_uptime(){
+        #example 2023-12-28 17:15:35
+        uptime -s
+    }
+
     local os=$(read_os)
     local os_version=$(read_os_version)
     local kernel_version=$(read_kernel_version)
@@ -324,16 +325,23 @@ function read_process_information(){
 function alert_metrics(){
     if [[ $1 -eq 0 || $1 -eq 1 ]]; then
         if [[ $1 -eq 0 ]]; then
-            ALERT_VALUE=0 //NO ALERT
-        elif [[ $1 -eq 1 ]]; then
-            ALERT_VALUE=1 //ALERT
+            ALERT_VALUE=0 #NO ALERT
             ALERT_LEVEL="NILL"
+            return 0
+        elif [[ $1 -eq 1 ]]; then
+            ALERT_VALUE=1 #ALERT
         fi
-        return 1
     fi
-    if [[ $2 == "HIGH" || $2 == "MEDIUM" || $2 == "LOW" || $2 == "NILL" ]]; then
+    if [[ $2 =~ "HIGH" || $2 == "MEDIUM" || $2 == "LOW" || $2 == "NILL" ]]; then
+        if [[ ! $2 =~ "NILL" ]]; then
             ALERT_LEVEL="$2"
-            return 1
+            if [[ $3 ]]; then
+                ALERT_DESC="$3"
+            else
+                return 1
+            fi
+            return 0
+        fi
     fi
     return 0
 }
@@ -350,7 +358,83 @@ function monitor_cpu_usage(){
     fi
 }
 
-monitor_cpu_usage
+function convert_to_gb() {
+    input=$1
+    unit=$(echo $input | sed -n -E 's/([0-9.]+)([KkMmGgTtPpEeZzYy])?.?/\2/p' | tr '[:lower:]' '[:upper:]')
+
+    case $unit in
+        K) factor=1e-6 ;;
+        M) factor=1e-3 ;;
+        G) factor=1 ;;
+        T) factor=1e3 ;;
+        P) factor=1e6 ;;
+        E) factor=1e9 ;;
+        Z) factor=1e12 ;;
+        Y) factor=1e15 ;;
+        *) factor=0 ;;  # Default case for gigabytes
+    esac
+
+    if [ "$factor" != "0" ]; then
+        result=$(echo "$input" | sed -E "s/([0-9.]+)([KkMmGgTtPpEeZzYy])?B?/\1/" | awk "{printf \"%.2f\", \$1 * $factor}")
+        echo "$result"
+    else
+        return 0
+    fi
+}
+
+function monitor_memory_usage(){
+    a="/var/log/symo/13:42:06::30:12:2023"
+    
+    memory_log=$(cat "$a/memory.smlog")
+
+    local total_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.total')
+    total_memory=$(convert_to_gb "$total_memory_without_conversion")
+    local used_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.used')
+    used_memory=$(convert_to_gb "$used_memory_without_conversion")
+    local free_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.free')
+    free_memory=$(convert_to_gb "$free_memory_without_conversion")
+    local shared_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.shared')
+    shared_memory=$(convert_to_gb "$shared_memory_without_conversion")
+    local buff_cache_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.buff_cache')
+    buff_cache_memory=$(convert_to_gb "$buff_cache_memory_without_conversion")
+    local available_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.available')
+    available_memory=$(convert_to_gb "$available_memory_without_conversion")
+
+    local low_total_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.low.total')
+    low_total_memory=$(convert_to_gb "$low_total_memory_without_conversion")
+    local low_used_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.low.used')
+    low_used_memory=$(convert_to_gb "$low_used_memory_without_conversion")
+    local low_free_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.low.free')
+    low_free_memory=$(convert_to_gb "$low_free_memory_without_conversion")
+
+    local high_total_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.high.total')
+    high_total_memory=$(convert_to_gb "$high_total_memory_without_conversion")
+    local high_used_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.high.used')
+    high_used_memory=$(convert_to_gb "$high_used_memory_without_conversion")
+    local high_free_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.low.free')
+    high_free_memory=$(convert_to_gb "$high_free_memory_without_conversion")
+    
+    local swap_total_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.swap.total')
+    swap_total_memory=$(convert_to_gb "$swap_total_memory_without_conversion")
+    local swap_used_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.swap.used')
+    swap_used_memory=$(convert_to_gb "$swap_used_memory_without_conversion")
+    local swap_free_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.swap.free')
+    swap_free_memory=$(convert_to_gb "$swap_free_memory_without_conversion")
+
+    #metrics
+    memory_utilization=$(echo "scale=2; ($used_memory / $total_memory) * 100" | bc -l)
+    buff_cache_utilization=$(echo "scale=2; ($buff_cache_memory / $total_memory) * 100" | bc -l)
+    swap_utilization=$(echo "scale=2; ($swap_used_memory / $swap_total_memory) * 100" | bc -l)
+    if [[ "$(echo "$memory_utilization > 0" | bc -l)" -eq 1 ]]; then
+        alert_metrics 1 "HIGH" "Memory Utilization $memory_utilization is High!" 
+    elif [[ "$(echo "$buff_cache_utilization > 90" | bc -l)" -eq 1 ]]; then
+        alert_metrics 1 "HIGH" "Memory buff_cache utilization $buff_cache_utilization is High!"
+    elif [[ "$(echo "$swap_utilization > 90" | bc -l)" -eq 1 ]]; then
+        alert_metrics 1 "HIGH" "Memory swap Utilization $swap_utilization is High!"
+    fi
+    echo "$ALERT_VALUE $ALERT_LEVEL $ALERT_DESC"
+}
+monitor_memory_usage
 
 function logging(){
     declare -g parent_with_timestamp_dir="N"
