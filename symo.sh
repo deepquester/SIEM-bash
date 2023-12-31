@@ -328,9 +328,9 @@ function read_process_information(){
 }
 
 function make_json_object(){
-    local -n keys_ref=$1
-    local -n values_ref=$2
-
+    local -n ref_assoc_arr="$1"
+    keys_ref=("${!ref_assoc_arr[@]}")
+    values_ref=("${ref_assoc_arr[@]}")
     # Print JSON object
     local key_array=()
     for key in "${values_ref[@]}"; do
@@ -359,10 +359,7 @@ my_obj["hello"]="hi"
 my_obj["hello1"]="hi1"
 my_obj["hello3"]="hi3"
 
-# Get keys and values separately
-keys=("${!my_obj[@]}")
-values=("${my_obj[@]}")
-result=$(make_json_object keys values)
+result=$(make_json_object my_obj)
 echo "$result"
 
 function queue_mechanics(){
