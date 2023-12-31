@@ -10,6 +10,9 @@ PURPLE='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m'  # No Color
 
+#Define Global Variables
+queue=()
+
 #Read-Only variables
 readonly log_dir="/var/log/symo"
 
@@ -326,35 +329,49 @@ function read_process_information(){
 
 function alert_metrics(){
     if [[ $1 =~ "HIGH" || $1 == "MEDIUM" || $1 == "LOW" ]]; then
-        ALERT_VALUE="True"
+        ALERT_VALUE="TRUE"
         ALERT_LEVEL="$1"
         if [[ $2 ]]; then
             ALERT_DESC="$2"
         else
             return 1
         fi
+        local object='{
+            "value": '"\"$ALERT_VALUE\","'
+            "level": '"\"$ALERT_LEVEL\","'
+            "description": '"\"$ALERT_DESC\""'
+        },'
+        queue_mechanics "PUSH" "$object"
         return 0
     elif [[ $1 =~ "NILL" ]]; then
-        ALERT_VALUE="False"
+        ALERT_VALUE="FALSE"
         ALERT_LEVEL="NILL"
         ALERT_DESC="NILL"
         return 0
     elif [[ $1 =~ "ECHO" ]]; then
-        echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}" 
-        if [[ $ALERT_VALUE == 0 ]]; then
-            echo -e "${GREEN}Alert:False${NC}"
-        else
-            echo -e "${RED}Alert:${BOLD}True${NC}"
-        fi
-        if [[ $ALERT_LEVEL == "HIGH" ]]; then
-            echo -e "${RED}Alert Level: ${BOLD}$ALERT_LEVEL${NC}"
-        elif [[ $ALERT_LEVEL == "MEDIUM" ]]; then
-            echo -e "${YELLOW}Alert Level: ${BOLD}$ALERT_LEVEL${NC}"
-        elif [[ $ALERT_LEVEL == "LOW" ]]; then
-            echo -e "${GREEN}Alert Level: $ALERT_LEVEL${NC}"
-        fi
-        echo -e "${BLUE}Alert Description: ${BOLD}'""$ALERT_DESC""'${NC}"
-        echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}"
+        queue_array=$(echo "${queue[@]}")
+        queue_array=$(echo "[${queue_array[@]}]" | sed 's/\(.*\),\]$/\1]/' | jq) 
+        for element in "$(echo "$queue_array" | jq -c '.[]'); do
+            local value=$(echo "$element" | jq -r '.value')
+            local level=$(echo "$element" | jq '.level')
+            local description=$(echo "$element" | jq '.description')
+            echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}" 
+            if [[ $value == "FALSE" ]]; then
+                echo -e "${GREEN}Alert:FALSE${NC}"
+            else
+                echo -e "${RED}Alert:${BOLD}TRUE${NC}"
+            fi
+            echo "$element" 
+            if [[ $level == "HIGH" ]]; then
+                echo -e "${RED}Alert Level: ${BOLD}$level${NC}"
+            elif [[ $level == "MEDIUM" ]]; then
+                echo -e "${YELLOW}Alert Level: ${BOLD}$level${NC}"
+            elif [[ $level == "LOW" ]]; then
+                echo -e "${GREEN}Alert Level: ${BOLD}$level${NC}"
+            fi
+            echo -e "${BLUE}Alert Description: ${BOLD}$ALERT_DESC${NC}"
+            echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}"
+        done
     elif [[ $1 =~ "SAVE" ]]; then
         status_log_object='{
         "alert": '"\"""$ALERT_VALUE""\","'
@@ -365,21 +382,14 @@ function alert_metrics(){
         #$log_dir/&status.smlog
     fi
 }
-
-function monitor_cpu_usage(){
-    a="/var/log/symo/13:42:06::30:12:2023"
-    idle=$(cat "$a/cpu.smlog" | jq '.idle')
-    cpu_utilization=$(echo "100 - $idle" | bc -l)
-    if [[ $cpu_utilization > 80 ]]; then   
-        alert_metrics "MEDIUM" "CPU Utilization is High! Metrics=$cpu_utilization%"
-        #return 0    
-    fi
-    alert_metrics "SAVE"
-    return 1
-}
-monitor_cpu_usage
 function convert_to_gb() {
     input=$1
+    limit=
+    if [[ $2 ]]; then
+        limit=$2
+    else
+        limit=11
+    fi
     unit=$(echo $input | sed -n -E 's/([0-9.]+)([KkMmGgTtPpEeZzYy])?.?/\2/p' | tr '[:lower:]' '[:upper:]')
 
     case $unit in
@@ -395,11 +405,57 @@ function convert_to_gb() {
     esac
 
     if [ "$factor" != "0" ]; then
-        result=$(echo "$input" | sed -E "s/([0-9.]+)([KkMmGgTtPpEeZzYy])?B?/\1/" | awk "{printf \"%.2f\", \$1 * $factor}")
+        result=$(echo "$input" | sed -E "s/([0-9.]+)([KkMmGgTtPpEeZzYy])?B?/\1/" | awk "{printf \"%."$limit"f\", \$1 * $factor}")
         echo "$result"
     else
         return 0
     fi
+}
+
+function queue_mechanics(){
+    if [[ "$2" ]]; then
+        if [[ "$1" == "PUSH" ]]; then
+            queue+=("$2")
+             return 1
+        elif [[ "$1" == "POP" ]]; then
+            queue=("${queue[@]:1}")
+            return 1
+        fi
+    else
+        return 0
+    fi
+    
+}
+
+function monitor_disk_usage(){
+    a="/var/log/symo/13:42:06::30:12:2023"
+    array_of_partitions=$(cat "$a/disk.smlog")
+    file_systems=($(echo "$array_of_partitions" | jq -c '.[]'))
+    for element in "${file_systems[@]}"; do
+        partition=$(echo "$element" | jq '.meta.file_system' | sed -E 's/"//g')
+        used_with_signed=$(echo "$element" | jq '.meta.used' | sed -E 's/"//g')
+        total_size_with_signed=$(echo "$element" | jq '.meta.size' | sed -E 's/"//g')
+        used=$(convert_to_gb $used_with_signed)
+        size=$(convert_to_gb "$total_size_with_signed")
+        usage=$(echo "scale=2; ($used/$size) * 100" | bc)
+        if [[ $(echo "$usage > 40" | bc -l) -eq 1 ]]; then
+            alert_metrics "HIGH" "Disk usage is HIGH on '$partition'. Metrics=$usage"
+        fi
+    done
+    alert_metrics "ECHO"
+}
+monitor_disk_usage
+
+function monitor_cpu_usage(){
+    a="/var/log/symo/13:42:06::30:12:2023"
+    idle=$(cat "$a/cpu.smlog" | jq '.idle')
+    cpu_utilization=$(echo "100 - $idle" | bc -l)
+    if [[ $cpu_utilization > 80 ]]; then   
+        alert_metrics "MEDIUM" "CPU Utilization is High! Metrics=$cpu_utilization%"
+        #return 0    
+    fi
+    alert_metrics "SAVE"
+    return 1
 }
 
 function monitor_memory_usage(){
