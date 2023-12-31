@@ -351,16 +351,13 @@ function make_json_object(){
     fi
     object_string="${object_string%,}"  # Remove the trailing comma
     object_string="{$object_string}"
-    echo "$object_string"
+    echo "$object_string" | jq > /dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        echo "$object_string"
+    else
+        return 0
+    fi
 }
-
-declare -A my_obj
-my_obj["hello"]="hi"
-my_obj["hello1"]="hi1"
-my_obj["hello3"]="hi3"
-
-result=$(make_json_object my_obj)
-echo "$result"
 
 function queue_mechanics(){
     if [[ "$1" && "$2" ]]; then
@@ -388,7 +385,6 @@ function queue_mechanics(){
     else
         return 0
     fi
-    
 }
 
 
