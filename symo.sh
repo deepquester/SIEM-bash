@@ -362,7 +362,25 @@ function make_json_object(){
 function queue_mechanics(){
     if [[ "$1" && "$2" ]]; then
         if [[ "$1" == "PUSH" ]]; then
-            queue+=("$2")
+            total_queue="${#queue[@]}"
+            total_incremented=$(echo "$total_queue + 1" | bc)
+            function check_incremented_conflicts(){
+                local object="$1"
+                for x in "${queue[@]}"; do
+                    if [[ $(echo "$x" | jq '.id') -eq total_incremented ]]; then
+                        total_incremented=$(echo "$total_incremented + 1" | bc)
+                        check_incremented_conflicts
+                    fi
+                done
+                param_object="{
+                            \"id\": \"$total_incremented\"","
+                            \"meta\":"$object"
+                        }"
+                param_object=$(echo "$param_object" | jq)
+                return 1
+            }
+            check_incremented_conflicts "$2"
+            queue+=("$param_object")
             return 1
         elif [[ "$1" == "POP" ]]; then
             queue=("${queue[@]:1}")
@@ -371,22 +389,19 @@ function queue_mechanics(){
             :
         fi
     elif [[ "$1" == "RTN_ALL" ]]; then
-        queue_length+=$(echo "${#queue[@]}")
-        queue_strn+=$(echo "[${queue[@]}]")
-        echo "$queue_length"
+        make_json_object "$queue"
 
-        for ((i=0; i<queue_length; i++)); do
-            object=$(echo "${queue[""$i""]}")
-            object_length=$(echo "${#object[@]}")
-
-        done
     elif [[ "$1" == "RTN_SPEC" ]]; then
             return 1
     else
         return 0
     fi
 }
-
+queue_mechanics "PUSH" "{
+  \"hi1\": \"hello1\",
+  \"hi3\": \"hello3\",
+  \"hi\": \"hello\"
+}"
 
 : 'function notify_local_system(){
     local priority="$1"
