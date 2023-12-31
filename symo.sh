@@ -327,6 +327,111 @@ function read_process_information(){
         echo "${total_process_array[@]}" | jq
 }
 
+function make_json_object(){
+    local -n keys_ref=$1
+    local -n values_ref=$2
+
+    # Print JSON object
+    local key_array=()
+    for key in "${values_ref[@]}"; do
+        # Escape special characters in the key and value
+        key_array+=("$key")
+    done
+    local value_array=()
+    for value in "${keys_ref[@]}"; do
+        # Escape special characters in the key and value
+        value_array+=("$value")
+    done
+    if [[ ${key_array} -eq ${value_array} ]]; then
+        for ((i=0; i<${#key_array}; i++)); do
+            object_string+="\"${key_array[$i]}\""":""\"${value_array[$i]}\","
+        done
+    else
+        return 0
+    fi
+    object_string="${object_string%,}"  # Remove the trailing comma
+    object_string="{$object_string}"
+    echo "$object_string"
+}
+
+declare -A my_obj
+my_obj["hello"]="hi"
+my_obj["hello1"]="hi1"
+my_obj["hello3"]="hi3"
+
+# Get keys and values separately
+keys=("${!my_obj[@]}")
+values=("${my_obj[@]}")
+result=$(make_json_object keys values)
+echo "$result"
+
+function queue_mechanics(){
+    if [[ "$1" && "$2" ]]; then
+        if [[ "$1" == "PUSH" ]]; then
+            queue+=("$2")
+            return 1
+        elif [[ "$1" == "POP" ]]; then
+            queue=("${queue[@]:1}")
+            return 1
+        else
+            :
+        fi
+    elif [[ "$1" == "RTN_ALL" ]]; then
+        queue_length+=$(echo "${#queue[@]}")
+        queue_strn+=$(echo "[${queue[@]}]")
+        echo "$queue_length"
+
+        for ((i=0; i<queue_length; i++)); do
+            object=$(echo "${queue[""$i""]}")
+            object_length=$(echo "${#object[@]}")
+
+        done
+    elif [[ "$1" == "RTN_SPEC" ]]; then
+            return 1
+    else
+        return 0
+    fi
+    
+}
+
+
+: 'function notify_local_system(){
+    local priority="$1"
+    if [[ "$1" == "HIGH" ]]; then
+
+    elif [[ "$1" == "MEDIUM" ]]; then
+
+    elif [[ "$1" == "LOW" ]]; then
+    else
+        return 0
+    fi
+
+
+    if [[ "$1" ]]; then
+        local description="$1"
+    else 
+        return 0
+    fi
+
+
+    if [[ "$2" ]]; then
+        if [[ $2 == "low" ]]; then
+            notify-send --urgency=low "SyMo alert! Priority: $2" "$description"
+            return 1
+        elif [[ $2 == "normal" ]]; then
+            notify-send --urgency=normal "SyMo alert! Priority: $2" "$description"
+            return 1
+        elif [[ $2 == "critical" ]]; then
+            notify-send --urgency=critical "SyMo alert! Priority: $2" "$description"
+            return 1
+        else 
+            return 0
+        fi
+    else
+        return 0
+    fi
+} '
+
 function alert_metrics(){
     if [[ $1 =~ "HIGH" || $1 == "MEDIUM" || $1 == "LOW" ]]; then
         ALERT_VALUE="TRUE"
@@ -349,19 +454,20 @@ function alert_metrics(){
         ALERT_DESC="NILL"
         return 0
     elif [[ $1 =~ "ECHO" ]]; then
-        queue_array=$(echo "${queue[@]}")
-        queue_array=$(echo "[${queue_array[@]}]" | sed 's/\(.*\),\]$/\1]/' | jq) 
-        for element in "$(echo "$queue_array" | jq -c '.[]'); do
+        queue_array=$(printf "%s" "${queue[@]}")
+        queue_array=$(echo "[${queue_array}]" | sed 's/\(.*\),\]$/\1]/')
+        queue_length=$(echo "$queue_array" | jq length)
+        for ((i=0; i<$queue_length; i++)); do
+            element=$(echo "$queue_array" | jq '.['"$i"']')
             local value=$(echo "$element" | jq -r '.value')
-            local level=$(echo "$element" | jq '.level')
-            local description=$(echo "$element" | jq '.description')
-            echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}" 
+            local level=$(echo "$element" | jq -r '.level')
+            local description=$(echo "$element" | jq -r '.description')
+            echo -e "${BOLD}${YELLOW}[∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞${GREEN}${BOLD}LOGS${YELLOW}∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞]${NC}" 
             if [[ $value == "FALSE" ]]; then
                 echo -e "${GREEN}Alert:FALSE${NC}"
             else
                 echo -e "${RED}Alert:${BOLD}TRUE${NC}"
             fi
-            echo "$element" 
             if [[ $level == "HIGH" ]]; then
                 echo -e "${RED}Alert Level: ${BOLD}$level${NC}"
             elif [[ $level == "MEDIUM" ]]; then
@@ -370,8 +476,10 @@ function alert_metrics(){
                 echo -e "${GREEN}Alert Level: ${BOLD}$level${NC}"
             fi
             echo -e "${BLUE}Alert Description: ${BOLD}$ALERT_DESC${NC}"
-            echo -e "${BOLD}${PURPLE}[--------------------------------------------------]${NC}"
+            echo -e "${BOLD}${YELLOW}[∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞${RED}${BOLD}END${YELLOW}∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞∞]${NC}"
         done
+    elif [[ "$1" =~ "NOTIFY" ]]; then
+        notify_local_system $2
     elif [[ $1 =~ "SAVE" ]]; then
         status_log_object='{
         "alert": '"\"""$ALERT_VALUE""\","'
@@ -382,6 +490,8 @@ function alert_metrics(){
         #$log_dir/&status.smlog
     fi
 }
+
+#sudo apt-get install libnotify-bin
 function convert_to_gb() {
     input=$1
     limit=
@@ -412,21 +522,6 @@ function convert_to_gb() {
     fi
 }
 
-function queue_mechanics(){
-    if [[ "$2" ]]; then
-        if [[ "$1" == "PUSH" ]]; then
-            queue+=("$2")
-             return 1
-        elif [[ "$1" == "POP" ]]; then
-            queue=("${queue[@]:1}")
-            return 1
-        fi
-    else
-        return 0
-    fi
-    
-}
-
 function monitor_disk_usage(){
     a="/var/log/symo/13:42:06::30:12:2023"
     array_of_partitions=$(cat "$a/disk.smlog")
@@ -444,7 +539,6 @@ function monitor_disk_usage(){
     done
     alert_metrics "ECHO"
 }
-monitor_disk_usage
 
 function monitor_cpu_usage(){
     a="/var/log/symo/13:42:06::30:12:2023"
