@@ -360,26 +360,42 @@ function make_json_object(){
     fi
 }
 
-function match_json_value(){
+function match_json(){
+    local type_param=$(declare -p "$1")
+    local -n param_data="$1"
+    if [[ "$type_param" =~ "declare -a" ]]; then
+        #regular array
+        declare -n param_array=param_data
+    elif [[ "$type_param" =~ "declare -A" ]]; then
+        #assoc array
+        declare -n param_assoc_array=param_data
+    else
+        return 0
+    fi
     #takes array as param
-    local -n param_array="$1"
     local key="$2"
     local value="$3"
     local type_of_output="$4"
-    local command_1="echo \"\${param_array[@]}\" | "
-    local command_2="jq 'if .$key == \"$value\" then "
-    local command_3=". "
-    local command_4=" else 0 end'"
+    local command_1="echo \"\${"
+    local var_command="param_array[@]"
+    local command_2="}\" | jq 'if ."
+    local key_command="$key"
+    local command_3=" == \""
+    local value_command="$value"
+    local command_4="\" then "
+    local command_5=". "
+    local command_6=" else 0 end'"
     if [[ "$type_of_output" == "once" ]]; then
         local is_found=0
         local output=$(eval "${command_1}${command_2}1${command_4}")
-        for item in "${output[@]}"; do
+        for item in ${output[@]}; do
             if [[ "$item" -eq 1 ]]; then
                 is_found=1
                 break
             fi
         done
         echo "$is_found"
+        #returns 1 if minimum one object has been found in search query else 0
     elif [[ "$type_of_output" == "mt1" ]]; then
         local is_found=\0
         local first_found=\0
@@ -400,15 +416,55 @@ function match_json_value(){
             fi
         done
         echo "$return_false"
+        #returns 1 if more than one object has been found in search query else 0
+    elif [[ "$type_of_output" == "rtn_first" ]]; then
+        local output=$(eval "${command_1}${command_2}${command_3}${command_4}")
+        local store_object_string=""
+        for x in ${output[@]}; do
+            if [[ "$x" =~ ^[0]$ ]]; then
+                continue
+            fi
+            if [[ "$x" == "}" ]]; then
+                store_object_string+="$x"
+                break
+            fi
+            store_object_string+="$x"
+        done 
+        echo "$store_object_string"
+        #returns one object
+    elif [[ "$type_of_output" == "rtn_all" ]]; then
+        
+        #local command_1="echo \"\${"
+        #local var_command="param_array[@]"
+        #local command_2="}\" | jq 'if ."
+        #local key_command="$key"
+        #local command_3=" == \""
+        #local value_command="$value"
+        #local command_4="\" then "
+        #local command_5=". "
+        #local command_6=" else 0 end'"
+        local output=$(eval "${command_1}param_array[@]${command_2}meta.${key_command}${command_3}${value_command}${command_4}${command_5}${command_6}")
+        local store_object_array=()
+        local store_object_string=""
+        for x in ${output[@]}; do
+            if [[ "$x" =~ ^[0]$ ]]; then
+                continue
+            fi
+            if [[ "$x" == "}" ]]; then
+                store_object_string+="$x"
+                store_object_array+=("$store_object_string")
+                store_object_string=""
+                continue
+            fi
+            store_object_string+="$x"
+        done
+        echo "${store_object_array[@]}"
+        # returns array of objects
     else
         return 0
     fi
 }
 
-array=("{\"hi\":\"hello\"}" "{\"hi\":\"hello\"}"  "{\"test\":\"test1\"}")
-
-result=$(match_json_value  array hi hello mt1)
-echo "$result" 
 function queue_mechanics(){
     if [[ "$1" && "$2" ]]; then
         if [[ "$1" == "PUSH" ]]; then
@@ -417,7 +473,7 @@ function queue_mechanics(){
             function check_incremented_conflicts(){
                 local object="$1"
                 for x in "${queue[@]}"; do
-                    if [[ $(echo "$x" | jq '.id') -eq total_incremented ]]; then
+                    if [[ $(echo "$x" | jq '.id') == \"$total_incremented\" ]]; then
                         total_incremented=$(echo "$total_incremented + 1" | bc)
                         check_incremented_conflicts
                     fi
@@ -435,24 +491,31 @@ function queue_mechanics(){
         elif [[ "$1" == "POP" ]]; then
             queue=("${queue[@]:1}")
             return 1
+        elif [[ "$1" == "SEARCH" && "$2" && "$3" ]]; then
+            result=$(match_json queue "$3" "$4" "rtn_all")
+            echo "$result"
+            return 1
         else
             :
         fi
-    elif [[ "$1" == "RTN_ALL" ]]; then
-        make_json_object "$queue"
-
-    elif [[ "$1" == "RTN_SPEC" ]]; then
-            return 1
     else
         return 0
     fi
 }
-queue_mechanics "PUSH" "{
-  \"hi1\": \"hello1\",
-  \"hi3\": \"hello3\",
-  \"hi\": \"hello\"
-}"
-
+declare -A assoc_array
+assoc_array["hi"]="hi"
+assoc_array["hi2"]="hi2"
+assoc_array["hi3"]="hi3"
+declare -A assoc_array_2
+assoc_array_2["hi4"]="hi4"
+assoc_array_2["hi5"]="hi5"
+assoc_array_2["hi6"]="hi6"
+a=$(make_json_object assoc_array)
+b=$(make_json_object assoc_array_2)
+queue_mechanics "PUSH" "$a" 
+queue_mechanics "PUSH" "$b" 
+result=$(queue_mechanics "SEARCH" assoc_array hi hi)
+echo "$result"
 : 'function notify_local_system(){
     local priority="$1"
     if [[ "$1" == "HIGH" ]]; then
