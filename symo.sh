@@ -328,6 +328,7 @@ function read_process_information(){
 }
 
 function make_json_object(){
+    #takes assoc array as param
     local -n ref_assoc_arr="$1"
     keys_ref=("${!ref_assoc_arr[@]}")
     values_ref=("${ref_assoc_arr[@]}")
@@ -359,6 +360,55 @@ function make_json_object(){
     fi
 }
 
+function match_json_value(){
+    #takes array as param
+    local -n param_array="$1"
+    local key="$2"
+    local value="$3"
+    local type_of_output="$4"
+    local command_1="echo \"\${param_array[@]}\" | "
+    local command_2="jq 'if .$key == \"$value\" then "
+    local command_3=". "
+    local command_4=" else 0 end'"
+    if [[ "$type_of_output" == "once" ]]; then
+        local is_found=0
+        local output=$(eval "${command_1}${command_2}1${command_4}")
+        for item in "${output[@]}"; do
+            if [[ "$item" -eq 1 ]]; then
+                is_found=1
+                break
+            fi
+        done
+        echo "$is_found"
+    elif [[ "$type_of_output" == "mt1" ]]; then
+        local is_found=\0
+        local first_found=\0
+        local return_false=\0
+        local output=$(eval "${command_1}${command_2}1${command_4}")
+        for item in ${output[@]}; do
+            if [[ $first_found -eq 0 ]]; then
+                if [[ $item -eq 1 ]]; then
+                    first_found=1
+                    continue
+                fi
+            elif [[ $first_found -eq 1 && $item -eq 0 ]]; then
+                return_false=1
+                continue
+            elif [[ $first_found -eq 1 && $item -eq 1 ]]; then
+                echo 1
+                return 1
+            fi
+        done
+        echo "$return_false"
+    else
+        return 0
+    fi
+}
+
+array=("{\"hi\":\"hello\"}" "{\"hi\":\"hello\"}"  "{\"test\":\"test1\"}")
+
+result=$(match_json_value  array hi hello mt1)
+echo "$result" 
 function queue_mechanics(){
     if [[ "$1" && "$2" ]]; then
         if [[ "$1" == "PUSH" ]]; then
