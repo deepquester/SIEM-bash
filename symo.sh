@@ -433,16 +433,6 @@ function match_json(){
         echo "$store_object_string"
         #returns one object
     elif [[ "$type_of_output" == "rtn_all" ]]; then
-        
-        #local command_1="echo \"\${"
-        #local var_command="param_array[@]"
-        #local command_2="}\" | jq 'if ."
-        #local key_command="$key"
-        #local command_3=" == \""
-        #local value_command="$value"
-        #local command_4="\" then "
-        #local command_5=". "
-        #local command_6=" else 0 end'"
         local output=$(eval "${command_1}param_array[@]${command_2}meta.${key_command}${command_3}${value_command}${command_4}${command_5}${command_6}")
         local store_object_array=()
         local store_object_string=""
@@ -502,56 +492,45 @@ function queue_mechanics(){
         return 0
     fi
 }
-declare -A assoc_array
-assoc_array["hi"]="hi"
-assoc_array["hi2"]="hi2"
-assoc_array["hi3"]="hi3"
-declare -A assoc_array_2
-assoc_array_2["hi4"]="hi4"
-assoc_array_2["hi5"]="hi5"
-assoc_array_2["hi6"]="hi6"
-a=$(make_json_object assoc_array)
-b=$(make_json_object assoc_array_2)
-queue_mechanics "PUSH" "$a" 
-queue_mechanics "PUSH" "$b" 
-result=$(queue_mechanics "SEARCH" assoc_array hi hi)
-echo "$result"
-: 'function notify_local_system(){
-    local priority="$1"
-    if [[ "$1" == "HIGH" ]]; then
 
-    elif [[ "$1" == "MEDIUM" ]]; then
-
-    elif [[ "$1" == "LOW" ]]; then
-    else
-        return 0
+function notify_local_system(){
+    #sudo apt install dbus-x11
+    local send_from="$1"
+    local priority="$2"
+    local title="$3"
+    local description="$4"
+    local urgency
+    if [ "$priority" == "HIGH" ]; then
+        urgency="critical"
+    elif [ "$priority" == "MEDIUM" ]; then
+        urgency="normal"
+    elif [ "$priority" == "LOW" ]; then
+        urgency="low"
     fi
-
-
-    if [[ "$1" ]]; then
-        local description="$1"
-    else 
-        return 0
-    fi
-
-
-    if [[ "$2" ]]; then
-        if [[ $2 == "low" ]]; then
-            notify-send --urgency=low "SyMo alert! Priority: $2" "$description"
-            return 1
-        elif [[ $2 == "normal" ]]; then
-            notify-send --urgency=normal "SyMo alert! Priority: $2" "$description"
-            return 1
-        elif [[ $2 == "critical" ]]; then
-            notify-send --urgency=critical "SyMo alert! Priority: $2" "$description"
-            return 1
-        else 
-            return 0
+    if [[ "$send_from" == "queue" ]]; then
+        local low_only_alerts_array=$(echo "${queue[0]}" | jq 'if .meta.level == '"\"${priority}\""' then . else 0 end')
+            for x in "${low_only_alerts_array[@]}"; do
+                local level=$(echo "$x" | jq '.meta.level')
+                local description=$(echo "$x" | jq '.meta.description')
+                sudo notify-send --urgency="${urgency}" "SyMo alert! Priority: $level" "$description"
+            done
+    elif [[ "$send_from" == "call" ]]; then
+        if [[ -n "$title" && -n "$description" ]]; then
+            sudo notify-send --urgency="${urgency}" "SyMo alert! $title Priority: $priority" "$description"
         fi
     else
         return 0
     fi
-} '
+}
+
+object='{
+            "value": '"\"TRUE\","'
+            "level": '"\"HIGH\","'
+            "description": '"\"HI HOW ARE YOU\""'
+        }'
+
+queue_mechanics "PUSH" "$object"
+notify_local_system "call" "HIGH" "hi" "hello"
 
 function alert_metrics(){
     if [[ $1 =~ "HIGH" || $1 == "MEDIUM" || $1 == "LOW" ]]; then
