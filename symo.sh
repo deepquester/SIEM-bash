@@ -20,10 +20,10 @@ readonly APP_CONFIG_DIR="/home/$(whoami)"
 readonly APP_CONFIG_NAME="/symo.config"
 readonly APP_NAME="symo"
 readonly APP_VERSION="1.0.1"
-readonly SMTP_SERVER_ADDRESS=""
-readonly SMTP_PORT=""
-readonly SMTP_SYSTEM_EMAIL=""
-readonly SMTP_APP_PASSWORD=""
+SMTP_SERVER_ADDRESS=""
+SMTP_PORT=""
+SMTP_SYSTEM_EMAIL=""
+SMTP_APP_PASSWORD=""
 
 #Status
 ALERT_VALUE=False #False - No alert, True - alert
@@ -817,29 +817,39 @@ function send_email(){
     local block="$3"
     echo -e "Subject: $subject\n\n$email_body" | msmtp $recipient_email
 }
+
+function modify_app_config(){
+    local key="$1"
+    local value="$2"
+    if [[ -e "$app_config_dir" ]]; then
+           return 1
+    else
+        sed -iE "/$key/c\\$key=$value" "$APP_CONFIG_DIR$APP_CONFIG_NAME"
+        cat "$APP_CONFIG_DIR$APP_CONFIG_NAME"
+    fi
+}
+
 function init_app_config(){
     if [[ -e "$app_config_dir" ]]; then
            return 1
     else
         sudo mkdir -p "$APP_CONFIG_DIR" && touch "$APP_CONFIG_DIR$APP_CONFIG_NAME"
-        echo "
-        #META#
-        APP_NAME=""$APP_NAME""
-        APP_RELEASE_VERSION=""$APP_VERSION""
-        #END#
+echo "
+#META#
+APP_NAME=""$APP_NAME""
+APP_RELEASE_VERSION=""$APP_VERSION""
+#END#
 
-        #EMAIL CONFIG#
-        SMTP_SERVICE_NAME=""
-        SMTP_SERVER_ADDRESS=""
-        SMTP_PORT=""
-        SMTP_SYSTEM_EMAIL=""
-        SMTP_APP_PASSWORD=""
-        #END#" > "$APP_CONFIG_DIR$APP_CONFIG_NAME"
+#EMAIL CONFIG#
+SMTP_SERVICE_NAME=""
+SMTP_SERVER_ADDRESS=""
+SMTP_PORT=""
+SMTP_SYSTEM_EMAIL=""
+SMTP_APP_PASSWORD=""
+#END#" > "$APP_CONFIG_DIR$APP_CONFIG_NAME"
     fi
     cat "$APP_CONFIG_DIR$APP_CONFIG_NAME"
 }
-
-init_app_config    
 rec_email="deeptestingdev@gmail.com"
 function drop_queue_emails(){
     for x in "${queue[@]}"; do
@@ -854,51 +864,43 @@ function drop_queue_emails(){
 #alert_metrics "HIGH" "Having keep"
 #drop_queue_emails
 
-#tvbp pnna cxvd havf 
+#tvbp pnna cxvd havf modify_app_config
 function prompt_email_config(){
     read -p "Enter SMTP Service Name[gmail yahoo protonmail]:" SMTP_SERVICE_NAME
     read -p "Enter SMTP Server Address:" SMTP_SERVER_ADDRESS
     read -p "Enter SMTP Server Port[TLS]:" SMTP_PORT
     read -p "Enter Sender Email:" SMTP_SYSTEM_EMAIL
     read -p "Enter App Password:" SMTP_APP_PASSWORD
+
+    modify_app_config "SMTP_SERVICE_NAME" "$SMTP_SERVICE_NAME"
+    modify_app_config "SMTP_SERVER_ADDRESS" "$SMTP_SERVER_ADDRESS"
+    modify_app_config "SMTP_PORT" "$SMTP_PORT"
+    modify_app_config "SMTP_SYSTEM_EMAIL" "$SMTP_SYSTEM_EMAIL"
+    modify_app_config "SMTP_APP_PASSWORD" "$SMTP_APP_PASSWORD"
+
+    cat "$APP_CONFIG_DIR$APP_CONFIG_NAME"
 }
+prompt_email_config
+
 function configure_mail(){
 
-    local msmtprc_content='defaults
+    local msmtprc_content="defaults
     auth           on
     tls            on
     tls_starttls   on
     tls_certcheck  off
     logfile        ~/.msmtp.log
 
-    account        '"$SMTP_SERVICE_NAME"'
-    host           '"$SMTP_SERVER_ADDRESS"'
-    port           '"$SMTP_PORT"'
-    from           '"$SMTP_SYSTEM_EMAIL"'
-    user           '"$SMTP_SYSTEM_EMAIL"'
-    password       '"$SMTP_APP_PASSWORD"'
+    account        $SMTP_SERVICE_NAME
+    host           $SMTP_SERVER_ADDRESS
+    port           $SMTP_PORT
+    from           $SMTP_SYSTEM_EMAIL
+    user           $SMTP_SYSTEM_EMAIL
+    password       $SMTP_APP_PASSWORD
 
-    account default : '"$smtp_service_name"'
+    account default : $smtp_service_name"
     echo "$msmtprc_content" > "~/.msmtprc"
     sudo chmod 600 ~/.msmtprc
-}
-
-function fetch_smtp_id(){
-    # Fetch the IP address of smtp.gmail.com
-    smtp_ip=$(dig +short smtp.gmail.com)
-
-    # Check if the IP address is not empty
-    if [ -n "$smtp_ip" ]; then
-        # Update Postfix configuration with the new IP address
-        sed -i "s/^relayhost = .*$/relayhost = [$smtp_ip]:587/" /etc/postfix/main.cf
-
-        # Restart Postfix to apply the changes
-        systemctl restart postfix
-
-        echo "Postfix configuration updated with smtp.gmail.com IP: $smtp_ip"
-    else
-        echo "Failed to fetch smtp.gmail.com IP address"
-    fi
 }
 
 function main_read_system(){
