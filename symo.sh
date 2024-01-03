@@ -12,9 +12,18 @@ NC='\033[0m'  # No Color
 
 #Define Global Variables
 queue=()
+drop_email_priority="HIGH"
 
 #Read-Only variables
-readonly log_dir="/var/log/symo"
+readonly LOG_DIR="/var/log/symo"
+readonly APP_CONFIG_DIR="/home/$(whoami)"
+readonly APP_CONFIG_NAME="/symo.config"
+readonly APP_NAME="symo"
+readonly APP_VERSION="1.0.1"
+readonly SMTP_SERVER_ADDRESS=""
+readonly SMTP_PORT=""
+readonly SMTP_SYSTEM_EMAIL=""
+readonly SMTP_APP_PASSWORD=""
 
 #Status
 ALERT_VALUE=False #False - No alert, True - alert
@@ -736,7 +745,7 @@ function monitor_memory_usage(){
 function logging(){
     declare -g parent_with_timestamp_dir="N"
     function make_parent_log_dir(){
-        mkdir -p $log_dir
+        mkdir -p $LOG_DIR
         if [[ $? -eq 0 ]]; then
             return 0
         else
@@ -757,7 +766,7 @@ function logging(){
         local timestamp=$(read_system_timestamp)
         local date=$(echo "$timestamp" | jq '.date' | sed -E 's/"*//g')
         local time=$(echo "$timestamp" | jq '.time' | sed -E 's/"*//g')
-        timestamp_log_dir="$log_dir/$time::$date"
+        timestamp_log_dir="$LOG_DIR/$time::$date"
         return_array=("$timestamp_log_dir" "$time" "$date")
         echo "${return_array[@]}"
     }
@@ -767,20 +776,20 @@ function logging(){
             echo -e "${RED}${BOLD}Something went wrong!${NC}"
         else
             #system_info
-            echo "$(read_system_info)" > "$log_dir/$1/system.smlog"
+            echo "$(read_system_info)" > "$LOG_DIR/$1/system.smlog"
             #network
-            echo "$(read_network_statistics)" > "$log_dir/$1/network.smlog"
+            echo "$(read_network_statistics)" > "$LOG_DIR/$1/network.smlog"
             #disk
-            echo "$(read_disk_storage)" > "$log_dir/$1/disk.smlog"
+            echo "$(read_disk_storage)" > "$LOG_DIR/$1/disk.smlog"
             #memory
-            echo "$(read_memory_usage)" > "$log_dir/$1/memory.smlog"
+            echo "$(read_memory_usage)" > "$LOG_DIR/$1/memory.smlog"
             #cpu
-            echo "$(read_cpu_usage)" > "$log_dir/$1/cpu.smlog"
+            echo "$(read_cpu_usage)" > "$LOG_DIR/$1/cpu.smlog"
             #process
-            echo "$(read_process_information)" > "$log_dir/$1/process.smlog"
+            echo "$(read_process_information)" > "$LOG_DIR/$1/process.smlog"
         fi
     }
-    if [[ ! -e $log_dir ]]; then
+    if [[ ! -e $LOG_DIR ]]; then
         make_parent_log_dir
     fi
     returned_timestamp_dir=$(return_timestamp_log_dir)
@@ -791,51 +800,111 @@ function logging(){
     save_log "$time::$date"
 }
 
-function configure_mail(){
-    apt-get install postfix -y
-    apt-get install sendmail -y
-    apt-get remove sendmail-bin -y
-    apt autoremove -y
-    apt-get install -f
-
-    read -p "Enter SMTP Server Address:" smtp_address
-    read -p "Enter SMTP Server Port[TLS]:" smtp_port
-    read -p "Enter Sender Email:" sender_email
-    read -p "Enter App Password:" app_pass
-    echo "[$smtp_address]:$smtp_port $sender_email:$app_pass" >  /etc/postfix/sasl/sasl_passwd
-    postmap /etc/postfix/sasl/sasl_passwd
-    chown root:root /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
-    chmod 0600 /etc/postfix/sasl/sasl_passwd /etc/postfix/sasl/sasl_passwd.db
-
-
-    echo "mydestination = $myhostname, localhost, localhost.localdomain
-    relayhost = [$smtp_address]:$smtp_port
-    mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
-
-    # Enable SASL authentication
-    smtp_sasl_auth_enable = yes
-    smtp_sasl_security_options = noanonymous
-    smtp_sasl_password_maps = hash:/etc/postfix/sasl/sasl_passwd
-    smtp_tls_security_level = encrypt
-    smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt">> /etc/postfix/main.cf
-
-    sudo systemctl restart postfix
+function init_installation_and_config(){
+    apt-get update && apt-get upgrade
+    #Config mail
+    sudo apt-get install msmtp
+    #END Config mail
+    #Commands
+    apt install sysstat -y
+    apt install jq -y
+    sudo apt-get install libnotify-bin
 }
 
-function alert(){
-    echo "alert"
+function send_email(){
+    local recipient_email="$1"
+    local subject="$2"
+    local block="$3"
+    echo -e "Subject: $subject\n\n$email_body" | msmtp $recipient_email
+}
+function init_app_config(){
+    if [[ -e "$app_config_dir" ]]; then
+           return 1
+    else
+        sudo mkdir -p "$APP_CONFIG_DIR" && touch "$APP_CONFIG_DIR$APP_CONFIG_NAME"
+        echo "
+        #META#
+        APP_NAME=""$APP_NAME""
+        APP_RELEASE_VERSION=""$APP_VERSION""
+        #END#
+
+        #EMAIL CONFIG#
+        SMTP_SERVICE_NAME=""
+        SMTP_SERVER_ADDRESS=""
+        SMTP_PORT=""
+        SMTP_SYSTEM_EMAIL=""
+        SMTP_APP_PASSWORD=""
+        #END#" > "$APP_CONFIG_DIR$APP_CONFIG_NAME"
+    fi
+    cat "$APP_CONFIG_DIR$APP_CONFIG_NAME"
+}
+
+init_app_config    
+rec_email="deeptestingdev@gmail.com"
+function drop_queue_emails(){
+    for x in "${queue[@]}"; do
+        local level=$(echo "$x" | jq '.meta.level' | sed -E 's/^.//' | sed -E 's/.$//')
+        local description=$(echo "$x" | jq '.meta.description' | sed -E 's/^.//' | sed -E 's/.$//')
+        if [[ "$level" == "$drop_email_priority" ]]; then
+            send_email "$rec_email" "$level level on Symo" "$description"
+        fi
+    done
+}
+
+#alert_metrics "HIGH" "Having keep"
+#drop_queue_emails
+
+#tvbp pnna cxvd havf 
+function prompt_email_config(){
+    read -p "Enter SMTP Service Name[gmail yahoo protonmail]:" SMTP_SERVICE_NAME
+    read -p "Enter SMTP Server Address:" SMTP_SERVER_ADDRESS
+    read -p "Enter SMTP Server Port[TLS]:" SMTP_PORT
+    read -p "Enter Sender Email:" SMTP_SYSTEM_EMAIL
+    read -p "Enter App Password:" SMTP_APP_PASSWORD
+}
+function configure_mail(){
+
+    local msmtprc_content='defaults
+    auth           on
+    tls            on
+    tls_starttls   on
+    tls_certcheck  off
+    logfile        ~/.msmtp.log
+
+    account        '"$SMTP_SERVICE_NAME"'
+    host           '"$SMTP_SERVER_ADDRESS"'
+    port           '"$SMTP_PORT"'
+    from           '"$SMTP_SYSTEM_EMAIL"'
+    user           '"$SMTP_SYSTEM_EMAIL"'
+    password       '"$SMTP_APP_PASSWORD"'
+
+    account default : '"$smtp_service_name"'
+    echo "$msmtprc_content" > "~/.msmtprc"
+    sudo chmod 600 ~/.msmtprc
+}
+
+function fetch_smtp_id(){
+    # Fetch the IP address of smtp.gmail.com
+    smtp_ip=$(dig +short smtp.gmail.com)
+
+    # Check if the IP address is not empty
+    if [ -n "$smtp_ip" ]; then
+        # Update Postfix configuration with the new IP address
+        sed -i "s/^relayhost = .*$/relayhost = [$smtp_ip]:587/" /etc/postfix/main.cf
+
+        # Restart Postfix to apply the changes
+        systemctl restart postfix
+
+        echo "Postfix configuration updated with smtp.gmail.com IP: $smtp_ip"
+    else
+        echo "Failed to fetch smtp.gmail.com IP address"
+    fi
 }
 
 function main_read_system(){
     echo "reading"
 }
 
-function init_config(){
-    apt-get update && apt-get upgrade
-    apt install sysstat -y
-    apt install jq -y
-    configure_mail
-}
 
 function main(){
     echo -e "${GREEN}${BOLD}Welcome to Symo [mini-SIEM bash project] by ${RED}${BOLD}Deep=⍜⎊⎈${NC}"
