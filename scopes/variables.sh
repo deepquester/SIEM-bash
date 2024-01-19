@@ -15,7 +15,8 @@ export queue=()
 export drop_email_priority="HIGH"
 
 #Read-Only variables
-export readonly LOG_DIR="/var/log/symo"
+#export readonly LOG_DIR="/var/log/symo"
+export readonly LOG_DIR="/root/bash_volume/symo_temp"
 export readonly APP_CONFIG_DIR="/home/$(whoami)"
 export readonly APP_CONFIG_NAME="/symo.config"
 export readonly APP_NAME="symo"

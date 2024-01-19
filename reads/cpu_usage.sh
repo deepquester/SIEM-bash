@@ -1,4 +1,5 @@
 #!/bin/bash
+#sudo apt-get install sysstat
 
 function read_cpu_usage() {
     : '#example

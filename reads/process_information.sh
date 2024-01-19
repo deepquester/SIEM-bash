@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source "$(dirname "${BASH_SOURCE[0]}")/system_timestamp.sh" 
 
 function read_process_information(){
     : 'USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -43,30 +43,13 @@ function read_process_information(){
             time_process=$(echo "$line" | awk '{print $10}')
             command_process=$(echo "$line" | awk '{for (i=11; i<=NF; i++) printf "%s ", $i; print ""}')
 
-            unit_process_object='{
-                "id": '"$process_count"',
-                "meta": {
-                    "pid": '"$pid_process"',
-                    "cpu": '"$cpu_process"',
-                    "mem": '"$mem_process"',
-                    "vsz": '"$vsz_process"',
-                    "rss": '"$rss_process"',
-                    "tty": "'"$tty_process"'",
-                    "stat": "'"$stat_process"'",
-                    "start": "'"$start_process"'",
-                    "time": "'"$time_process"'",
-                    "command": "'"$command_process"'"
-                }
-            }'
+            unit_process_object=$(printf '{"id": "'$process_count'", "meta": {"pid": "%s", "cpu": "%s", "mem": "%s", "vsz": "%s", "rss": "%s", "tty": "%s", "stat": "%s", "start": "%s", "time": "%s", "command": "%s"}}' "$pid_process" "$cpu_process" "$mem_process" "$vsz_process" "$rss_process" "$tty_process" "$stat_process" "$start_process" "$time_process" "$command_process")
 
-            total_process_array+=("$unit_process_object")
-            total_process_array+=(,)
+            total_process_array+=("\"$unit_process_object\"")
         fi
     done
-        total_process_array=("${total_process_array[@]:0:$((${#total_process_array[@]}-1))}")
-        total_process_array=("[" "${total_process_array[@]}")
-        total_process_array+=(])
-        echo "${total_process_array[@]}" | jq
+            echo "${total_process_array[@]}"
+            # return as a bash array
 }
 
 export -f read_process_information
