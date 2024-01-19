@@ -1,5 +1,19 @@
 #!/bin/bash
 source "$(dirname "${BASH_SOURCE[0]}")/system_timestamp.sh" 
+source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
+
+function json_into_array_temp_redirect(){
+    local process_count="$1" 
+    local object="$2"
+    if [[ "$process_count" -eq 1 ]]; then
+        echo "[ $object," > "$TEMP_PATH"
+    elif [[ "$process_count" == "done" ]]; then
+        head -c -2 "$TEMP_PATH" > "$TEMP_2_PATH" && mv "$TEMP_2_PATH" "$TEMP_PATH"
+        echo " ]" >> "$TEMP_PATH"
+    else
+        echo "$object," >> "$TEMP_PATH"
+    fi
+}
 
 function read_process_information(){
     : 'USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -25,31 +39,25 @@ function read_process_information(){
     total_process_array=()
     process_count=0
     for line in $(ps aux); do
-        ((line_count++))
+        ((process_count++))
+        # Extracting values using awk
+        pid_process=$(echo "$line" | awk '{print $2}')
+        cpu_process=$(echo "$line" | awk '{print $3}')
+        mem_process=$(echo "$line" | awk '{print $4}')
+        vsz_process=$(echo "$line" | awk '{print $5}')
+        rss_process=$(echo "$line" | awk '{print $6}')
+        tty_process=$(echo "$line" | awk '{print $7}')
+        stat_process=$(echo "$line" | awk '{print $8}')
+        start_process=$(echo "$line" | awk '{print $9}')
+        time_process=$(echo "$line" | awk '{print $10}')
+        command_process=$(echo "$line" | awk '{for (i=11; i<=NF; i++) printf "%s ", $i; print ""}' | sed -E 's/"/'\''/g')
 
-        if [[ $process_count -eq 0 ]]; then
-            process_count=$((process_count + 1))
-            continue
-        else
-            # Extracting values using awk
-            pid_process=$(echo "$line" | awk '{print $2}')
-            cpu_process=$(echo "$line" | awk '{print $3}')
-            mem_process=$(echo "$line" | awk '{print $4}')
-            vsz_process=$(echo "$line" | awk '{print $5}')
-            rss_process=$(echo "$line" | awk '{print $6}')
-            tty_process=$(echo "$line" | awk '{print $7}')
-            stat_process=$(echo "$line" | awk '{print $8}')
-            start_process=$(echo "$line" | awk '{print $9}')
-            time_process=$(echo "$line" | awk '{print $10}')
-            command_process=$(echo "$line" | awk '{for (i=11; i<=NF; i++) printf "%s ", $i; print ""}')
+        unit_process_object=$(printf '{"id": "'$process_count'", "meta": {"pid": "%s", "cpu": "%s", "mem": "%s", "vsz": "%s", "rss": "%s", "tty": "%s", "stat": "%s", "start": "%s", "time": "%s", "command": "%s"}}' "$pid_process" "$cpu_process" "$mem_process" "$vsz_process" "$rss_process" "$tty_process" "$stat_process" "$start_process" "$time_process" "$command_process")
 
-            unit_process_object=$(printf '{"id": "'$process_count'", "meta": {"pid": "%s", "cpu": "%s", "mem": "%s", "vsz": "%s", "rss": "%s", "tty": "%s", "stat": "%s", "start": "%s", "time": "%s", "command": "%s"}}' "$pid_process" "$cpu_process" "$mem_process" "$vsz_process" "$rss_process" "$tty_process" "$stat_process" "$start_process" "$time_process" "$command_process")
-
-            total_process_array+=("\"$unit_process_object\"")
-        fi
+        json_into_array_temp_redirect "$process_count" "$unit_process_object" 
     done
-            echo "${total_process_array[@]}"
-            # return as a bash array
+    json_into_array_temp_redirect "done"
+    # return as a bash array
 }
 
 export -f read_process_information

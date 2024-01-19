@@ -16,6 +16,9 @@ export drop_email_priority="HIGH"
 
 #Read-Only variables
 #export readonly LOG_DIR="/var/log/symo"
+export readonly EPHEMERAL_DIR="$(dirname "${BASH_SOURCE[0]}")/../ephemeral"
+export readonly TEMP_PATH="$EPHEMERAL_DIR/temp"
+export readonly TEMP_2_PATH="$EPHEMERAL_DIR/temp.tmp"
 export readonly LOG_DIR="/root/bash_volume/symo_temp"
 export readonly APP_CONFIG_DIR="/home/$(whoami)"
 export readonly APP_CONFIG_NAME="/symo.config"
