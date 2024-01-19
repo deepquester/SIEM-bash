@@ -23,6 +23,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/init_app_config.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/prompt_email_config.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/configure_mail.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/main_read_system.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/craft_json.sh"
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_disk_usage.sh" 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_cpu_usage.sh" 

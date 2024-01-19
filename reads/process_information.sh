@@ -2,19 +2,6 @@
 source "$(dirname "${BASH_SOURCE[0]}")/system_timestamp.sh" 
 source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
 
-function json_into_array_temp_redirect(){
-    local process_count="$1" 
-    local object="$2"
-    if [[ "$process_count" -eq 1 ]]; then
-        echo "[ $object," > "$TEMP_PATH"
-    elif [[ "$process_count" == "done" ]]; then
-        head -c -2 "$TEMP_PATH" > "$TEMP_2_PATH" && mv "$TEMP_2_PATH" "$TEMP_PATH"
-        echo " ]" >> "$TEMP_PATH"
-    else
-        echo "$object," >> "$TEMP_PATH"
-    fi
-}
-
 function read_process_information(){
     : 'USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
     root           1  0.0  0.1 172488 16280 ?        Ss   17:15   0:09 /sbin/init splash
@@ -57,6 +44,7 @@ function read_process_information(){
         json_into_array_temp_redirect "$process_count" "$unit_process_object" 
     done
     json_into_array_temp_redirect "done"
+    echo "$TEMP_PATH"
     # return as a bash array
 }
 

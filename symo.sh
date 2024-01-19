@@ -1,7 +1,6 @@
 #!/bin/bash
 #Imports
 source "$(dirname "${BASH_SOURCE[0]}")/scopes/sources.sh" 
-
 logging
 #alert_metrics "HIGH" "Having keep"
 #drop_queue_emails
