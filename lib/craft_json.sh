@@ -1,6 +1,9 @@
 #!/bin/bash
-
 source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
+
+CRAFT_JSON_CALL_COUNT=0
+CRAFT_INNER_JSON_CALL_COUNT=0
+
 #FIXME these below 2 func
 function gen_random_hash(){
     local hash_6=$(openssl rand -hex 32 | sha256sum | awk '{print substr($1, 1, 6)}')
