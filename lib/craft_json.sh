@@ -1,5 +1,5 @@
 #!/bin/bash
-CRAFT_JSON_CALL_COUNT=0
+source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
 
 function gen_random_hash(){
     local hash_6=$(openssl rand -hex 32 | sha256sum | awk '{print substr($1, 1, 6)}')
@@ -16,22 +16,35 @@ function craft_json(){
     local key="$1"
     local value="$2"
     local instruct="$3"
-    local path=""
-    if [[ "$CRAFT_JSON_CALL_COUNT" -eq 0 ]]; then
-        path=$(make_temp_2_path)
-        echo "[" > "$path"
+    local key_and_value="\"$key\":\"$value\""
+
+    if [[ $(echo "$CRAFT_JSON_CALL_COUNT == 0" | bc ) -eq 1 ]]; then
+        echo "{" > "$TEMP_PATH"
     fi
-    declare -A assoc_array 
-    if [[ "$instruct" == "nest" ]]; then
-        :
-    elif
+    
+    if [[ "$instruct" == "done" ]]; then
+        echo "$key_and_value}" >> "$TEMP_PATH"
+        local path_content=$(cat "$TEMP_PATH")
+        local trimmed_path_content=$(echo "$path_content" | sed 's/[[:space:]]*$//')
+        echo "${trimmed_path_content%?}}" > "$TEMP_PATH"
+        CRAFT_JSON_CALL_COUNT=0
+        RECENT_OBJECT=$(cat "$TEMP_PATH")
+        return 0
+    elif [[ "$instruct" == "inner" ]]; then
         :
     else
-        assoc_array["$key"]="$value"
+        echo "$key_and_value," >> "$TEMP_PATH"
     fi
-
     ((CRAFT_JSON_CALL_COUNT++))
 }
+z=10
+for ((i = 0; i < 10; i++)); do
+    if [[ "$i" -eq 9 ]]; then
+        craft_json "jimni$i" "deep$i" "done"
+        break;
+    fi
+    craft_json "jimni$i" "deep$i"
+done
 
 function craft_json_once(){
     local object="$2"
