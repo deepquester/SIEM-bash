@@ -79,7 +79,8 @@ function craft_json(){
             if [[ "$instruct_2" == "inner_and_done_all_craft" ]]; then
                 local return_value=$(craft_json_once  "take_path")
                 echo "$return_value" > "$TEMP_PATH"
-                echo "$return_value"
+                RECENT_OBJECT=$(cat "$TEMP_PATH")
+                return 0
             fi
         else
             echo "$inner_key_and_value," >> "$TEMP_PATH"
@@ -88,6 +89,7 @@ function craft_json(){
             ((CRAFT_INNER_JSON_CALL_COUNT++))
         fi
         ((CRAFT_JSON_CALL_COUNT++))
+        RECENT_OBJECT=$(cat "$TEMP_PATH")
         return 0
     else
         echo "$key_and_value," >> "$TEMP_PATH"
