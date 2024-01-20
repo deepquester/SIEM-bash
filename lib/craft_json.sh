@@ -16,6 +16,7 @@ function craft_json(){
     local key="$1"
     local value="$2"
     local instruct="$3"
+    local instruct_2="$4"
     local key_and_value="\"$key\":\"$value\""
 
     if [[ $(echo "$CRAFT_JSON_CALL_COUNT == 0" | bc ) -eq 1 ]]; then
@@ -27,6 +28,9 @@ function craft_json(){
         local path_content=$(cat "$TEMP_PATH")
         local trimmed_path_content=$(echo "$path_content" | sed 's/[[:space:]]*$//')
         echo "${trimmed_path_content%?}}" > "$TEMP_PATH"
+        if [[ "$instruct_2" == "craft" ]]; then
+            echo "[$trimmed_path_content]" > "$TEMP_PATH"
+        fi
         CRAFT_JSON_CALL_COUNT=0
         RECENT_OBJECT=$(cat "$TEMP_PATH")
         return 0
@@ -40,7 +44,7 @@ function craft_json(){
 z=10
 for ((i = 0; i < 10; i++)); do
     if [[ "$i" -eq 9 ]]; then
-        craft_json "jimni$i" "deep$i" "done"
+        craft_json "jimni$i" "deep$i" "done" "craft"
         break;
     fi
     craft_json "jimni$i" "deep$i"
