@@ -1,6 +1,7 @@
 #!/bin/bash
-source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
 
+source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
+#FIXME these below 2 func
 function gen_random_hash(){
     local hash_6=$(openssl rand -hex 32 | sha256sum | awk '{print substr($1, 1, 6)}')
     echo "$hash_6"
@@ -11,6 +12,7 @@ function make_temp_2_path(){
     sudo touch "$path"
     echo "$path"
 }
+
 function craft_json_once(){
     local arg1="$1"
     local return_value=""
@@ -97,9 +99,9 @@ function craft_json(){
     ((CRAFT_JSON_CALL_COUNT++))
 }
 
-#craft_json "jimni" "deep" "done" "craft" 
-#craft_json "jimni1" "deep1" "love1" "inner"
-#craft_json "jimni2" "deep2" "love2" "inner_and_done_all_craft"
+#craft_json "1" "2" "done" "craft" 
+#craft_json "11" "12" "3" "inner"
+#craft_json "111" "112" "3" "inner_and_done_all_craft"
 
 function craft_json_by_count(){
     local count="$1" 
