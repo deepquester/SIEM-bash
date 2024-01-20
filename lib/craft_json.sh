@@ -27,18 +27,36 @@ function craft_json(){
         echo "$key_and_value}" >> "$TEMP_PATH"
         local path_content=$(cat "$TEMP_PATH")
         local trimmed_path_content=$(echo "$path_content" | sed 's/[[:space:]]*$//')
-        echo "${trimmed_path_content%?}}" > "$TEMP_PATH"
+        echo "${trimmed_path_content}" > "$TEMP_PATH"
         if [[ "$instruct_2" == "craft" ]]; then
             echo "[$trimmed_path_content]" > "$TEMP_PATH"
         fi
         CRAFT_JSON_CALL_COUNT=0
         RECENT_OBJECT=$(cat "$TEMP_PATH")
         return 0
-    elif [[ "$instruct" == "inner" ]]; then
-        :
+    elif [[ "$instruct" == "inner_done" ]]; then
+        echo "$key_and_value}" >> "$TEMP_PATH"
+        local path_content=$(cat "$TEMP_PATH")
+        local trimmed_path_content=$(echo "$path_content" | sed 's/[[:space:]]*$//')
+        echo "${trimmed_path_content%?}}" > "$TEMP_PATH"
+        if [[ "$instruct_2" == "craft" ]]; then
+            echo "[$trimmed_path_content}]" > "$TEMP_PATH"
+        fi
+        CRAFT_JSON_CALL_COUNT=0
+        RECENT_OBJECT=$(cat "$TEMP_PATH")
+        return 0
+    elif [[ "$instruct_2" == "inner" ]]; then
+        if [[ $(echo "$CRAFT_INNER_JSON_CALL_COUNT == 0" | bc ) -eq 1 ]]; then
+            local inner_key_and_value="\"$instruct\":{$key_and_value,"
+            echo "$inner_key_and_value" >> "$TEMP_PATH"
+            ((CRAFT_INNER_JSON_CALL_COUNT++))
+            return 0
+        fi
+        echo "$key_and_value," >> "$TEMP_PATH"
     else
         echo "$key_and_value," >> "$TEMP_PATH"
     fi
+    ((CRAFT_INNER_JSON_CALL_COUNT++))
     ((CRAFT_JSON_CALL_COUNT++))
 }
 z=10
@@ -69,4 +87,4 @@ function craft_json_by_count(){
     echo "$TEMP_PATH"
 }
 
-export -f craft_json_once craft_json_by_count
+export -f craft_json craft_json_once craft_json_by_count
