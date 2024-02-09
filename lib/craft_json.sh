@@ -39,7 +39,7 @@ function craft_json(){
         echo "{" > "$TEMP_PATH"
     fi
     
-    if [[ "$instruct" == "done"]]; then
+    if [[ "$instruct" == "done" ]]; then
         if [[ ! -z "$1" ]]; then
             echo "$key_and_value}" >> "$TEMP_PATH"
         else

@@ -52,10 +52,10 @@ function logging(){
     fi
     returned_timestamp_dir=$(return_timestamp_log_dir)
     timestamp_dir=$(echo "${returned_timestamp_dir[@]}" | awk '{print $1}')
-    time=$(echo "${returned_timestamp_dir[@]}" | awk '{print $2}')
+    time_ext=$(echo "${returned_timestamp_dir[@]}" | awk '{print $2}')
     date=$(echo "${returned_timestamp_dir[@]}" | awk '{print $3}')
-    make_dir_log_timestamp "$timestamp_dir" "$time" "$date" 2>&1 >/dev/null
-    save_log "$time::$date"
+    make_dir_log_timestamp "$timestamp_dir" "$time_ext" "$date" 2>&1 >/dev/null
+    save_log "$time_ext::$date"
 }
 
 export -f logging

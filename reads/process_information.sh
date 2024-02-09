@@ -1,6 +1,7 @@
 #!/bin/bash
 source "$(dirname "${BASH_SOURCE[0]}")/system_timestamp.sh" 
 source "$(dirname "${BASH_SOURCE[0]}")/../scopes/variables.sh" 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/craft_json.sh" 
 
 function read_process_information(){
     : 'USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -41,10 +42,12 @@ function read_process_information(){
 
         unit_process_object=$(printf '{"id": "'$process_count'", "meta": {"pid": "%s", "cpu": "%s", "mem": "%s", "vsz": "%s", "rss": "%s", "tty": "%s", "stat": "%s", "start": "%s", "time": "%s", "command": "%s"}}' "$pid_process" "$cpu_process" "$mem_process" "$vsz_process" "$rss_process" "$tty_process" "$stat_process" "$start_process" "$time_process" "$command_process")
 
-        json_into_array_temp_redirect "$process_count" "$unit_process_object" 
+        craft_json_by_count "$process_count" "$unit_process_object" 
     done
-    json_into_array_temp_redirect "done"
-    echo "$TEMP_PATH"
+    craft_json_by_count "done"
+    local content=$(<"$TEMP_PATH")
+    echo "$content"
+    exit 0
     # return as a bash array
 }
 
