@@ -117,7 +117,6 @@ function craft_json_by_count(){
     else
         echo "$object," >> "$TEMP_PATH"
     fi
-    echo "$TEMP_PATH"
 }
 
 export -f craft_json craft_json_once craft_json_by_count

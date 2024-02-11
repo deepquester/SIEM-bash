@@ -45,9 +45,7 @@ function read_process_information(){
         craft_json_by_count "$process_count" "$unit_process_object" 
     done
     craft_json_by_count "done"
-    local content=$(<"$TEMP_PATH")
-    echo "$content"
-    exit 0
+    cat "$TEMP_PATH"
     # return as a bash array
 }
 
