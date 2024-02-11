@@ -1,9 +1,9 @@
 #!/bin/bash
 
 function monitor_memory_usage(){
-    a="/var/log/symo/13:42:06::30:12:2023"
+    a="$(dirname "${BASH_SOURCE[0]}")/../../logs/16:00:55::11:02:2024"
     
-    memory_log=$(cat "$1/memory.smlog")
+    memory_log="$(cat "$a/memory.smlog")"
 
     local total_memory_without_conversion=$(echo "$memory_log" | jq -r '.meta.memory.total')
     total_memory=$(convert_to_gb "$total_memory_without_conversion")
@@ -43,14 +43,14 @@ function monitor_memory_usage(){
     memory_utilization=$(echo "scale=2; ($used_memory / $total_memory) * 100" | bc -l)
     buff_cache_utilization=$(echo "scale=2; ($buff_cache_memory / $total_memory) * 100" | bc -l)
     swap_utilization=$(echo "scale=2; ($swap_used_memory / $swap_total_memory) * 100" | bc -l)
-    if [[ "$(echo "$memory_utilization > 0" | bc -l)" -eq 1 ]]; then
+    if [[ "$(echo "$memory_utilization > 90" | bc -l)" -eq 1 ]]; then
         alert_metrics "HIGH" "Memory Utilization $memory_utilization is High!" 
     elif [[ "$(echo "$buff_cache_utilization > 90" | bc -l)" -eq 1 ]]; then
         alert_metrics "HIGH" "Memory buff_cache utilization $buff_cache_utilization is High!"
     elif [[ "$(echo "$swap_utilization > 90" | bc -l)" -eq 1 ]]; then
         alert_metrics "HIGH" "Memory swap Utilization $swap_utilization is High!"
     fi
-    echo "$ALERT_VALUE $ALERT_LEVEL $ALERT_DESC"
+    notify_local_system "queue" "HIGH"
 }
 
 export -f monitor_memory_usage
