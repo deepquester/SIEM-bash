@@ -37,7 +37,7 @@
     "meta": {
       "file_system": "tmpfs",
       "size": "5.0M",
-      "used": "4.0K",
+      "used": "4.8M",
       "avail": "5.0M",
       "use": "1%",
       "mounted_on": "/run/lock"
@@ -48,7 +48,7 @@
     "meta": {
       "file_system": "/dev/nvme0n1p1",
       "size": "96M",
-      "used": "58M",
+      "used": "95M",
       "avail": "39M",
       "use": "61%",
       "mounted_on": "/boot/efi"
