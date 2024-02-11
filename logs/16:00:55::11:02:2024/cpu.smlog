@@ -1,0 +1,13 @@
+{
+  "cpu": "all",
+  "usr": 44.06,
+  "nice": 0,
+  "sys": 5.83,
+  "iowait": 0.06,
+  "irq": 0,
+  "soft": 0.33,
+  "steal": 0,
+  "guest": 0,
+  "gnice": 0,
+  "idle": 1.72
+}
