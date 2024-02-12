@@ -1,9 +1,11 @@
 #!/bin/bash
 
 function monitor_network_usage(){
-    a="/var/log/symo/13:42:06::30:12:2023"
+    a="$(dirname "${BASH_SOURCE[0]}")/../../logs/16:00:55::11:02:2024"
     local network_log=$(cat "$a/network.smlog")
-    local array_of_logs=$(convert_array_json_from_file "$network_log")
+    local array_of_logs=($(echo "$network_log" | jq -c '.[]'))
+
+    #declare -a array_of_logs=$(convert_array_json_from_file "$network_log")
     get_error_metrics() {
         declare -a interface=$1
         local rx_err=$(echo "$interface" | jq '.meta.rx_err')
@@ -25,9 +27,11 @@ function monitor_network_usage(){
             alert_metrics "HIGH" "ALERT: $(echo "$interface" | jq '.meta.iface' | sed -E 's/^.//' | sed -E 's/.$//') has TX errors. TX-ERR: $tx_err"
         fi
     }
-    for x in ${array_of_logs[@]}; do
-        check_for_errors "$x"
+    local total_interface="${#array_of_logs[*]}"
+    for ((i=0;i<"$total_interface"; i++)); do
+        check_for_errors "${array_of_logs[i]}"
     done
+    notify_local_system "queue" "HIGH"
 }
 
 export -f monitor_network_usage

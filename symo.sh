@@ -1,7 +1,7 @@
 #!/bin/bash
 #Imports
 source "$(dirname "${BASH_SOURCE[0]}")/scopes/sources.sh" 
-monitor_memory_usage
+monitor_network_usage
 #alert_metrics "HIGH" "Having keep"
 #drop_queue_emails
 

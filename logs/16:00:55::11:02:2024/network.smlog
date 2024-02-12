@@ -5,7 +5,7 @@
       "iface": "lo",
       "mtu": 65536,
       "rx_ok": 2994,
-      "rx_err": 0,
+      "rx_err": 2,
       "rx_drp": 0,
       "rx_ovr": 0,
       "tx_ok": 2994,
