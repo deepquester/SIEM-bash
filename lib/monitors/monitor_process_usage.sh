@@ -25,12 +25,12 @@ detect_abnormalities() {
     extract_process_info "$log_line"
 
     # Check for abnormal conditions
-    if [[ $(echo "$cpu > $cpu_threshold" | bc -l) ]]; then
+    if [[ -n $cpu && -n $cpu_threshold && $(echo "$cpu > $cpu_threshold" | bc -l) ]]; then
         echo "Abnormal CPU usage detected: Process $command (PID: $pid), CPU usage: $cpu%"
         abnormal_detected=1
     fi
 
-    if [[ $(echo "$mem > $mem_threshold" | bc -l) ]]; then
+    if [[ -n $mem && -n $mem_threshold && $(echo "$mem > $mem_threshold" | bc -l) ]]; then
         echo "Abnormal memory usage detected: Process $command (PID: $pid), Memory usage: $mem%"
         abnormal_detected=1
     fi
