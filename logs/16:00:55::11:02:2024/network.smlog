@@ -6,11 +6,11 @@
       "mtu": 65536,
       "rx_ok": 2994,
       "rx_err": 2,
-      "rx_drp": 0,
+      "rx_drp": 2,
       "rx_ovr": 0,
       "tx_ok": 2994,
-      "tx_err": 0,
-      "tx_drp": 0,
+      "tx_err": 2,
+      "tx_drp": 2,
       "tx_ovr": 0,
       "flg": "LRU"
     }
@@ -21,12 +21,12 @@
       "iface": "wlp0s20f",
       "mtu": 1500,
       "rx_ok": 1646345,
-      "rx_err": 0,
-      "rx_drp": 0,
+      "rx_err": 2,
+      "rx_drp": 2,
       "rx_ovr": 0,
       "tx_ok": 224551,
-      "tx_err": 0,
-      "tx_drp": 0,
+      "tx_err": 2,
+      "tx_drp": 2,
       "tx_ovr": 0,
       "flg": "BMRU"
     }

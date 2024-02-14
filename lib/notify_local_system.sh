@@ -21,11 +21,11 @@ function notify_local_system(){
             [[ "$alert" =~ ^[0-9]+$ && "$alert" -eq 0 ]] && return 1
             local level=$(echo "$alert" | jq '.meta.level')
             local description=$(echo "$alert" | jq '.meta.description')
-            notify-send --urgency="${urgency}" "SiMo alert! Priority: $level" "$description"
+            notify-send --urgency="${urgency}" "SiMo alert! Priority: $level" "$description" -t 3000
         done
     elif [[ "$send_from" == "call" ]]; then
         if [[ -n "$title" && -n "$description" ]]; then
-            notify-send --urgency="${urgency}" "SiMo alert! $title Priority: $priority" "$description"
+            notify-send --urgency="${urgency}" "SiMo alert! $title Priority: $priority" "$description" -t 3000
         fi
     else
         return 0
