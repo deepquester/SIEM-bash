@@ -13,7 +13,7 @@ function read_system_timestamp(){
         "time": "'"$time"'",
         "day": "'"$day"'"
     }' 
-    echo "$timestamp_info" | jq
+    echo "$timestamp_info" 
 }
 
 export -f read_system_timestamp

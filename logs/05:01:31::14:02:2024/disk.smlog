@@ -1,0 +1,200 @@
+[
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/nvme0n1p7",
+      "size": "214G",
+      "used": "71G",
+      "avail": "133G",
+      "use": "35%",
+      "mounted_on": "/"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "devtmpfs",
+      "size": "4.0M",
+      "used": "0",
+      "avail": "4.0M",
+      "use": "0%",
+      "mounted_on": "/dev"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "tmpfs",
+      "size": "5.8G",
+      "used": "72M",
+      "avail": "5.7G",
+      "use": "2%",
+      "mounted_on": "/dev/shm"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "efivarfs",
+      "size": "184K",
+      "used": "120K",
+      "avail": "60K",
+      "use": "67%",
+      "mounted_on": "/sys/firmware/efi/efivars"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "tmpfs",
+      "size": "2.3G",
+      "used": "1.9M",
+      "avail": "2.3G",
+      "use": "1%",
+      "mounted_on": "/run"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop0",
+      "size": "128K",
+      "used": "128K",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/bare/5"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop3",
+      "size": "1.0M",
+      "used": "1.0M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/foliate/1775"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop4",
+      "size": "497M",
+      "used": "497M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/gnome-42-2204/141"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop5",
+      "size": "92M",
+      "used": "92M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/gtk-common-themes/1535"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop1",
+      "size": "75M",
+      "used": "75M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/core22/1033"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop2",
+      "size": "67M",
+      "used": "67M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/cups/1024"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop6",
+      "size": "439M",
+      "used": "439M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/kf5-5-110-qt-5-15-11-core22/3"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop7",
+      "size": "187M",
+      "used": "187M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/okular/148"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop8",
+      "size": "41M",
+      "used": "41M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/snapd/20671"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/loop9",
+      "size": "92M",
+      "used": "92M",
+      "avail": "0",
+      "use": "100%",
+      "mounted_on": "/var/lib/snapd/snap/webkitgtk-6-gnome-2204/31"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "tmpfs",
+      "size": "5.8G",
+      "used": "14M",
+      "avail": "5.8G",
+      "use": "1%",
+      "mounted_on": "/tmp"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "/dev/nvme0n1p6",
+      "size": "286M",
+      "used": "20M",
+      "avail": "267M",
+      "use": "7%",
+      "mounted_on": "/boot/efi"
+    }
+  },
+  {
+    "id": "1",
+    "meta": {
+      "file_system": "tmpfs",
+      "size": "1.2G",
+      "used": "128K",
+      "avail": "1.2G",
+      "use": "1%",
+      "mounted_on": "/run/user/1000"
+    }
+  }
+]

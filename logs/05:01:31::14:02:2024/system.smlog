@@ -1,0 +1,9 @@
+{
+        "os": "Fedora Linux",
+        "os_version": "39 (Xfce)
+GZILLA_PRODUCT_VERSION=3
+PPORT_PRODUCT_VERSION=3",
+        "kernel_version": "6.7.4-zen+",
+        "system_architecture": "unknown",
+        "system_uptime": "2024-02-14 03:05:44"
+    }

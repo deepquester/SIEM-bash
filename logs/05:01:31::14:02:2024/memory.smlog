@@ -1,0 +1,28 @@
+{
+  "id": "NIL",
+  "meta": {
+    "memory": {
+      "total": "11Gi",
+      "used": "3.6Gi",
+      "free": "5.4Gi",
+      "shared": "1.0Gi",
+      "buff_cache": "3.8Gi",
+      "available": "7.8Gi"
+    },
+    "low": {
+      "total": "11Gi",
+      "used": "6.1Gi",
+      "free": "5.4Gi"
+    },
+    "high": {
+      "total": "0B",
+      "used": "0B",
+      "free": "0B"
+    },
+    "swap": {
+      "total": "9.9Gi",
+      "used": "0B",
+      "free": "9.9Gi"
+    }
+  }
+}
