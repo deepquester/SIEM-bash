@@ -29,5 +29,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_disk_usage.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_cpu_usage.sh" 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_network_usage.sh" 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_memory_usage.sh" 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/monitors/monitor_process_usage.sh" 
 
 source "$(dirname "${BASH_SOURCE[0]}")/variables.sh"

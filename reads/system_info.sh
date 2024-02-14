@@ -39,7 +39,7 @@ function read_system_info(){
         "system_architecture": "'"$system_architecture"'",
         "system_uptime": "'"$system_uptime"'"
     }'
-    echo "$system_info" | jq
+    echo "$system_info" 
 }
 
 export -f read_system_info

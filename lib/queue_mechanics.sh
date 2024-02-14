@@ -20,9 +20,11 @@ function queue_mechanics(){
             }
             check_incremented_conflicts "$2"
             queue+=("$param_object")
+            echo "$queue" | jq > "$QUEUE_PATH"
             return 1
         elif [[ "$1" == "POP" ]]; then
             queue=("${queue[@]:1}")
+            echo "$queue" | jq > "$QUEUE_PATH"
             return 1
         elif [[ "$1" == "SEARCH" && "$2" && "$3" ]]; then
             result=$(match_json queue "$3" "$4" "rtn_all")
