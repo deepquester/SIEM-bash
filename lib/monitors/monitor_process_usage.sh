@@ -17,20 +17,18 @@ extract_process_info() {
 
 # Function to detect abnormalities
 detect_abnormalities() {
-    local cpu_threshold=$1
-    local mem_threshold=$2
-    local log_line=$3
+    local log_line=$1
     local abnormal_detected=0
 
     extract_process_info "$log_line"
 
     # Check for abnormal conditions
-    if [[ -n $cpu && -n $cpu_threshold && $(echo "$cpu > $cpu_threshold" | bc -l) ]]; then
+    if [[ -n $cpu && -n $cpu_threshold && $(echo "$cpu > $cpu_threshold" | bc -l) -eq 1 ]]; then
         echo "Abnormal CPU usage detected: Process $command (PID: $pid), CPU usage: $cpu%"
         abnormal_detected=1
     fi
 
-    if [[ -n $mem && -n $mem_threshold && $(echo "$mem > $mem_threshold" | bc -l) ]]; then
+    if [[ -n $mem && -n $mem_threshold && $(echo "$mem > $mem_threshold" | bc -l) -eq 1 ]]; then
         echo "Abnormal memory usage detected: Process $command (PID: $pid), Memory usage: $mem%"
         abnormal_detected=1
     fi
@@ -47,7 +45,7 @@ function monitor_process_usage(){
     # Read log file line by line
     while IFS= read -r line; do
         # Check for abnormalities
-        detect_abnormalities "$cpu_threshold" "$mem_threshold" "$line"
+        detect_abnormalities "$line"
         if [[ $? -eq 1 ]]; then
             echo "Log line: $line"
             echo "--------------------------------------"
